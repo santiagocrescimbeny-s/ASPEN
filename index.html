@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchard Time - Sistema Profesional de Gestión de Jornadas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-control-geocoder/1.13.0/Control.Geocoder.css">
+    <link rel="stylesheet" href="assets/styles/login.css">
+    <link rel="stylesheet" href="assets/styles/app.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-control-geocoder/1.13.0/Control.Geocoder.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <!-- APLICACIÓN PRINCIPAL -->
+    <div id="appContainer" class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-brand">
+                    <div class="header-logo">🥝</div>
+                    <div class="header-info">
+                        <h1>Orchard Time</h1>
+                        <p id="weekDisplay">Semana del 10 al 16 de Febrero</p>
+                    </div>
+                </div>
+                <div class="header-user">
+                    <span id="userName" class="user-name">Usuario</span>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <select id="langSelect" style="padding:6px; border-radius:6px;">
+                            <option value="es">Español</option>
+                            <option value="en">English</option>
+                        </select>
+                        <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+                            <input type="checkbox" id="darkModeToggle"> Dark
+                        </label>
+                        <button class="btn btn-sm btn-outline" onclick="handleLogout()">
+                            <i class="fas fa-sign-out-alt"></i> Salir
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container-fluid">
+                <!-- Sidebar -->
+                <aside class="sidebar">
+                    <!-- User Info Card -->
+                    <div class="card user-card">
+                        <div class="card-header">
+                            <i class="fas fa-user-circle"></i> Mis Datos
+                        </div>
+                        <div class="card-body">
+                            <div class="user-stat">
+                                <label>Nombre:</label>
+                                <span id="sidebarUserName">-</span>
+                            </div>
+                            <div class="user-stat">
+                                <label>IRD:</label>
+                                <span id="sidebarUserIRD">-</span>
+                            </div>
+                            <div class="user-stat">
+                                <label>Domicilio:</label>
+                                <span id="sidebarUserAddress">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- (Ubicación sidebar removed - use modal from entry form) -->
+
+                    <!-- Estadísticas Card -->
+                    <div class="card stats-card">
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar"></i> Resumen Semanal
+                        </div>
+                        <div class="card-body">
+                            <div class="stat-item">
+                                <div class="stat-icon">⏱️</div>
+                                <div class="stat-content">
+                                    <p class="stat-label">Horas Totales</p>
+                                    <p class="stat-value" id="totalHours">0.00</p>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">📅</div>
+                                <div class="stat-content">
+                                    <p class="stat-label">Días Trabajados</p>
+                                    <p class="stat-value" id="daysWorked">0</p>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">💼</div>
+                                <div class="stat-content">
+                                    <p class="stat-label">Promedio por Día</p>
+                                    <p class="stat-value" id="avgHours">0.00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estado de Pago Card -->
+                    <div class="card payment-card">
+                        <div class="card-header">
+                            <i class="fas fa-money-bill-wave"></i> Estado de Pago
+                        </div>
+                        <div class="card-body">
+                            <div class="payment-toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="weekPaidToggle" onchange="updatePaymentStatus()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span id="paymentStatus" class="payment-text">No Pagado</span>
+                            </div>
+                            <div id="paymentIndicator" class="payment-indicator unpaid">
+                                ❌ No Pagado
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Contenido Principal -->
+                <section class="main-section">
+                    <!-- Controles de Navegación -->
+                    <div class="controls-bar">
+                        <button class="btn btn-secondary btn-interactive" onclick="prevWeek()">
+                            <i class="fas fa-chevron-left"></i> Semana Anterior
+                        </button>
+                        <div class="week-selector">
+                            <div class="week-ending">
+                                <div class="week-ending-title" data-i18n-key="weekEnding">Week ending</div>
+                                <div id="weekRange" class="week-range">--</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary btn-interactive" onclick="nextWeek()">
+                            Próxima Semana <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button id="addEntryBtn" class="btn btn-primary btn-interactive" onclick="openEditModalForNew()">
+                            <i class="fas fa-plus"></i> Agregar Entrada
+                        </button>
+                        <button id="exportPdfBtn" class="btn btn-success btn-interactive" onclick="exportToPDF()">
+                            <i class="fas fa-download"></i> Exportar PDF
+                        </button>
+                    </div>
+
+                    <!-- Tabla Timesheet -->
+                    <div class="timesheet-wrapper">
+                        <table class="timesheet-table" id="timesheetTable">
+                            <thead>
+                                <tr>
+                                    <th>Día</th>
+                                    <th>Fecha</th>
+                                    <th>Huerto</th>
+                                    <th>Tipo de Trabajo</th>
+                                    <th>Dirección</th>
+                                    <th>Hora Inicio</th>
+                                    <th>AM Break</th>
+                                    <th>PM Break</th>
+                                    <th>Hora Fin</th>
+                                    <th>Horas</th>
+                                    <th>Notas</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timesheetBody">
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Mapa -->
+    <div id="mapModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Seleccionar Ubicación del Huerto</h2>
+                <button class="modal-close" onclick="closeMapModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex; gap:10px; margin-bottom:10px; align-items:center;">
+                    <input type="text" id="mapSearchInput" placeholder="Buscar dirección..." style="flex:1; padding:8px 10px; border:2px solid var(--border-color); border-radius:6px;">
+                    <button type="button" class="btn btn-sm" id="mapSearchBtn">Buscar</button>
+                </div>
+                <div id="map" class="map-container"></div>
+                <div class="location-info">
+                    <div class="info-group">
+                        <label>Dirección:</label>
+                        <input type="text" id="mapAddress" readonly>
+                    </div>
+                    <div class="info-group">
+                        <label>Latitud / Longitud:</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="number" id="mapLat" step="0.00001" readonly style="flex:1">
+                            <input type="number" id="mapLng" step="0.00001" readonly style="flex:1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-interactive" onclick="confirmLocation()">
+                    <i class="fas fa-check"></i> Confirmar Ubicación
+                </button>
+                <button class="btn btn-secondary" onclick="closeMapModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editar Día -->
+    <div id="editModal" class="modal">
+        <div class="modal-content modal-edit">
+            <div class="modal-header">
+                <h2>Editar Jornada Laboral</h2>
+                <button class="modal-close" onclick="closeEditModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm" class="edit-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Fecha</label>
+                            <input type="date" id="editDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Día</label>
+                            <input type="text" id="editDay" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Huerto</label>
+                            <input type="text" id="editOrchard" placeholder="Ej: Rio Orchard">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Trabajo</label>
+                            <input type="text" id="editWorkType" placeholder="Ej: Cosecha, Riego, Podas">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Ubicación</label>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <button type="button" class="btn btn-sm" id="locationInfoBtn" title="Seleccionar ubicación">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </button>
+                                <div id="editLocationDisplay" style="flex:1; padding:10px 12px; border:2px solid var(--border-color); border-radius:6px; background:white;">Sin ubicación seleccionada</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Hora Inicio</label>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <input type="text" id="editStartTimeText" placeholder="HH o HH:MM" oninput="onStartTimeInput()" style="flex:1; min-width:160px;">
+                                <label class="toggle-switch" title="AM / PM">
+                                    <input type="checkbox" id="editStartAmPmToggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span id="editStartAmPmLabel" style="min-width:40px; text-align:center; font-weight:600;">AM</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Hora Fin</label>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <input type="text" id="editEndTimeText" placeholder="HH o HH:MM" oninput="onEndTimeInput()" style="flex:1; min-width:160px;">
+                                <label class="toggle-switch" title="AM / PM">
+                                    <input type="checkbox" id="editEndAmPmToggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span id="editEndAmPmLabel" style="min-width:40px; text-align:center; font-weight:600;">PM</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group checkbox-inline">
+                            <label>
+                                <input type="checkbox" id="editAMBreak" onchange="updateEditHours()">
+                                AM Break (30 min)
+                            </label>
+                        </div>
+                        <div class="form-group checkbox-inline">
+                            <label>
+                                <input type="checkbox" id="editPMBreak" onchange="updateEditHours()">
+                                PM Break (30 min)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notas / Status</label>
+                        <textarea id="editNotes" placeholder="Ej: 🌧️ Lluvia, 😷 No asistió, 🆓 Día libre" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group hours-display">
+                        <label>Horas Calculadas:</label>
+                        <span id="editHoursResult" class="hours-value">0.00 hrs</span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-interactive" onclick="saveEditedDay()">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+                <button class="btn btn-secondary" onclick="closeEditModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="src/config.js?v=2"></script>
+    <script src="src/auth.js?v=2"></script>
+    <script src="src/core.js?v=2"></script>
+    <script src="src/timesheet.js?v=2"></script>
+    <script src="src/map.js?v=2"></script>
+    <script src="src/i18n.js?v=2"></script>
+    <script src="src/theme.js?v=2"></script>
+    <script src="src/export.js?v=2"></script>
+    <script>
+        function toggleAuthDiagnostics() {
+            const panel = document.getElementById('authDiagPanel');
+            if (!panel) return;
+            if (panel.style.display === 'none' || panel.style.display === '') {
+                panel.style.display = 'block';
+                refreshAuthDiagnostics();
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function refreshAuthDiagnostics() {
+            const content = document.getElementById('authDiagContent');
+            if (!content) return;
+            const logs = (AuthManager.getAuthLogs && AuthManager.getAuthLogs()) || [];
+            const users = (AuthManager.getAllUsers && AuthManager.getAllUsers()) || [];
+            const session = (AuthManager.getCurrentSession && AuthManager.getCurrentSession()) || null;
+
+            let html = '';
+            html += '--- Recent Logs ---\n';
+            if (logs.length === 0) html += '(no logs)\n';
+            else html += logs.join('\n') + '\n';
+            html += '\n--- Users (' + users.length + ') ---\n';
+            users.forEach(u => {
+                html += `${u.email}  (${u.firstName || ''} ${u.lastName || ''})\n`;
+            });
+            html += '\n--- Current Session ---\n';
+            html += session ? JSON.stringify(session, null, 2) : '(no session)';
+
+            content.textContent = html;
+        }
+    </script>
+</body>
+</html>

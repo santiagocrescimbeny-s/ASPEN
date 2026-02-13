@@ -1,0 +1,22 @@
+{
+  "name": "orchard-timesheet-pro",
+  "version": "1.0.0",
+  "description": "Sistema profesional de gestión de jornadas laborales para trabajos de huerto",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 3000"
+  },
+  "keywords": [
+    "timesheet",
+    "orchard",
+    "jornada laboral",
+    "gestión de horas"
+  ],
+  "author": "Orchard Pro Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/orchard-timesheet-pro.git"
+  }
+}

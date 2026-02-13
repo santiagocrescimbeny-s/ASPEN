@@ -1,0 +1,438 @@
+/* ============================================
+   LOGIN & AUTHENTICATION STYLES
+   ============================================ */
+
+:root {
+    --primary-color: #0066cc;
+    --primary-dark: #004499;
+    --primary-light: #3399ff;
+    --secondary-color: #22b55f;
+    --accent-gold: #d4af37;
+    --dark-bg: #1a365d;
+    --card-bg: #ffffff;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --border-color: #e0e0e0;
+    --error-color: #e74c3c;
+    --success-color: #27ae60;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-primary);
+    background: linear-gradient(135deg, var(--dark-bg) 0%, #2c5aa0 100%);
+}
+
+/* Auth Container */
+.auth-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--dark-bg) 0%, #2c5aa0 100%);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.auth-container.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Make auth container scrollable on small screens so register doesn't get cut off */
+@media (max-width: 768px) {
+    .auth-container.active {
+        align-items: flex-start;
+        padding-top: 28px;
+        overflow-y: auto;
+    }
+}
+
+/* Auth Box */
+.auth-box {
+    background: var(--card-bg);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 420px;
+    padding: 40px 30px;
+    position: relative;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+}
+
+.auth-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--accent-gold) 100%);
+}
+
+/* Auth Header */
+.auth-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.auth-logo {
+    font-size: 48px;
+    margin-bottom: 15px;
+    display: inline-block;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.auth-header h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: var(--primary-dark);
+    font-weight: 700;
+}
+
+.auth-header p {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* Auth Forms */
+.auth-form {
+    display: none;
+    animation: fadeInUp 0.4s ease;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.auth-form h2 {
+    font-size: 20px;
+    margin-bottom: 25px;
+    color: var(--text-primary);
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.form-group input::placeholder {
+    color: #999;
+}
+
+/* Buttons */
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn i {
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    border-color: var(--primary-color);
+    background: #f9f9f9;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--secondary-color) 0%, #1a8945 100%);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 181, 95, 0.4);
+}
+
+.btn-block {
+    width: 100%;
+    justify-content: center;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 12px;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+}
+
+.btn-outline:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-interactive {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-interactive::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-interactive:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Form Footer */
+.form-footer {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.form-footer p {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.form-footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.form-footer a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* Demo Login */
+.demo-login {
+    margin-top: 25px;
+    padding: 15px;
+    background: #f0f8ff;
+    border-left: 4px solid var(--primary-color);
+    border-radius: 6px;
+    text-align: center;
+}
+
+.demo-login p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+/* Alert Messages */
+.alert {
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 13px;
+    display: none;
+}
+
+.alert.show {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-error {
+    background: #fee;
+    color: var(--error-color);
+    border-left: 4px solid var(--error-color);
+}
+
+.alert-success {
+    background: #efe;
+    color: var(--success-color);
+    border-left: 4px solid var(--success-color);
+}
+
+/* Loading State */
+.btn.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.btn.loading::after {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .auth-box {
+        padding: 30px 20px;
+        border-radius: 12px;
+    }
+
+    .auth-header h1 {
+        font-size: 24px;
+    }
+
+    .auth-logo {
+        font-size: 40px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 10px 12px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+
+    .btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 400px) {
+    body {
+        background: var(--dark-bg);
+    }
+
+    .auth-box {
+        max-width: 100%;
+        border-radius: 0;
+        padding: 25px 15px;
+    }
+
+    .auth-header {
+        margin-bottom: 20px;
+    }
+
+    .auth-form h2 {
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
+}

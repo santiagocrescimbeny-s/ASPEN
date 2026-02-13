@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchard Timesheet Pro - Instrucciones</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #f8f9fa 0%, #e8f4e1 100%);
+            color: #1f2937;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c2c 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c2c 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(45, 80, 22, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #2d5016;
+            border: 2px solid #2d5016;
+        }
+
+        .btn-secondary:hover {
+            background: #f0f9ff;
+            transform: translateY(-2px);
+        }
+
+        .content-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #2d5016;
+        }
+
+        .content-section h2 {
+            color: #2d5016;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .content-section h3 {
+            color: #4a7c2c;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        ul {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #4a7c2c;
+        }
+
+        .feature-card h4 {
+            color: #2d5016;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .feature-card p {
+            font-size: 0.95rem;
+            color: #6b7280;
+        }
+
+        .emoji {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .code-block {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            margin: 1rem 0;
+        }
+
+        .success-message {
+            background: #dcfce7;
+            border-left: 4px solid #10b981;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1.5rem 0;
+        }
+
+        footer {
+            text-align: center;
+            color: #6b7280;
+            padding: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🌳</div>
+            <h1>Orchard Timesheet Pro</h1>
+            <p>Sistema Profesional de Gestión de Jornadas Laborales</p>
+        </header>
+
+        <div class="button-group">
+            <a href="index.html" class="btn btn-primary">
+                🚀 Ir a la Aplicación
+            </a>
+            <button onclick="loadDemo()" class="btn btn-secondary">
+                📊 Cargar Datos de Demostración
+            </button>
+        </div>
+
+        <div class="success-message">
+            ✅ <strong>¡Aplicación lista!</strong> Haz clic en "Ir a la Aplicación" para comenzar a registrar tus jornadas laborales.
+        </div>
+
+        <div class="content-section">
+            <h2>🎯 Características Principales</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="emoji">⏰</div>
+                    <h4>Cálculo Automático</h4>
+                    <p>Las horas se calculan automáticamente descontando los breaks</p>
+                </div>
+                <div class="feature-card">
+                    <div class="emoji">✓</div>
+                    <h4>Checkboxes Inteligentes</h4>
+                    <p>Marca fácilmente los breaks AM y PM</p>
+                </div>
+                <div class="feature-card">
+                    <div class="emoji">📍</div>
+                    <h4>Ubicación del Huerto</h4>
+                    <p>Selecciona y guarda la ubicación con el mapa</p>
+                </div>
+                <div class="feature-card">
+                    <div class="emoji">💰</div>
+                    <h4>Control de Pago</h4>
+                    <p>Toggle semanal con indicador visual de pago</p>
+                </div>
+                <div class="feature-card">
+                    <div class="emoji">🌈</div>
+                    <h4>Emojis Personalizados</h4>
+                    <p>Añade emojis para días especiales (lluvia, no asistió)</p>
+                </div>
+                <div class="feature-card">
+                    <div class="emoji">📱</div>
+                    <h4>Responsive</h4>
+                    <p>Funciona perfectamente en computadora y móvil</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2>📖 Guía Rápida de Uso</h2>
+            <h3>1. Registrar una Jornada</h3>
+            <ul>
+                <li>Ingresa la <strong>Hora de Inicio</strong></li>
+                <li>Marca los <strong>Breaks</strong> si aplica (AM y/o PM)</li>
+                <li>Ingresa la <strong>Hora de Fin</strong></li>
+                <li>Las horas se calcularán automáticamente</li>
+            </ul>
+
+            <h3>2. Usar el Botón Editar</h3>
+            <ul>
+                <li>Haz clic en <strong>"Editar"</strong> para ver un formulario más completo</li>
+                <li>Puedes modificar: Fecha, Día, Huerto, Tipo de Trabajo, etc.</li>
+                <li>Haz clic en <strong>"Guardar"</strong> para aplicar los cambios</li>
+            </ul>
+
+            <h3>3. Marcar Semana como Pagada</h3>
+            <ul>
+                <li>En el panel lateral, encontrarás <strong>"Estado de Pago"</strong></li>
+                <li>Activa el <strong>toggle</strong> para marcar la semana como pagada</li>
+                <li>La tabla cambiará automáticamente a color verde</li>
+            </ul>
+
+            <h3>4. Seleccionar Ubicación del Huerto</h3>
+            <ul>
+                <li>Haz clic en <strong>"Seleccionar Ubicación"</strong></li>
+                <li>En el mapa, haz clic donde está el huerto</li>
+                <li>Haz clic en <strong>"Confirmar Ubicación"</strong></li>
+            </ul>
+
+            <h3>5. Exportar a PDF</h3>
+            <ul>
+                <li>Haz clic en <strong>"Exportar PDF"</strong></li>
+                <li>Se abrirá una ventana lista para imprimir o guardar como PDF</li>
+            </ul>
+        </div>
+
+        <div class="content-section">
+            <h2>💡 Consejos de Uso</h2>
+            <ul>
+                <li>✓ <strong>Emojis Recomendados</strong>: 🌧️ (lluvia), 😷 (no asistió), 🆓 (día libre)</li>
+                <li>✓ <strong>Navegar Semanas</strong>: Usa los botones "Semana Anterior" y "Próxima Semana"</li>
+                <li>✓ <strong>Respaldo</strong>: Exporta a PDF regularmente como respaldo</li>
+                <li>✓ <strong>Sin Conexión</strong>: La aplicación funciona completamente offline</li>
+                <li>✓ <strong>Múltiples Huertos</strong>: Puedes registrar trabajo en diferentes huertos</li>
+            </ul>
+        </div>
+
+        <div class="grid-2">
+            <div class="content-section">
+                <h2>📊 Datos Guardados</h2>
+                <p>Todos tus datos se guardan automáticamente en tu navegador:</p>
+                <ul>
+                    <li>Ubicación del huerto</li>
+                    <li>Horas de todas las jornadas</li>
+                    <li>Breaks registrados</li>
+                    <li>Estado de pago semanal</li>
+                    <li>Notas especiales</li>
+                </ul>
+            </div>
+
+            <div class="content-section">
+                <h2>⚠️ Importante</h2>
+                <p>Ten en cuenta lo siguiente:</p>
+                <ul>
+                    <li>Los datos se guardan en tu navegador</li>
+                    <li>Mantén el caché limpio (los datos se perderán si lo limpias)</li>
+                    <li>Exporta regularmente como respaldo</li>
+                    <li>Funciona sin conexión a internet</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2>🔧 Cargar Datos de Demostración</h2>
+            <p>Si quieres ver cómo funciona la aplicación con datos de ejemplo:</p>
+            <div class="button-group">
+                <button onclick="loadDemo()" class="btn btn-primary">
+                    📊 Cargar Datos de Demostración
+                </button>
+            </div>
+            <p style="margin-top: 1rem; color: #6b7280; font-size: 0.9rem;">
+                Los datos de demostración incluyen una semana completa con varios registros de trabajo en diferentes huertos.
+            </p>
+        </div>
+
+        <footer>
+            <p><strong>Orchard Timesheet Pro</strong> - Versión 1.0.0</p>
+            <p>Desarrollado con ❤️ para trabajadores agrícolas</p>
+            <p style="margin-top: 1rem; font-size: 0.85rem;">© 2024 - Todos los derechos reservados</p>
+        </footer>
+    </div>
+
+    <script>
+        function loadDemo() {
+            const demoData = {
+                "2024-02-12": {
+                    "paid": true,
+                    "days": [
+                        {
+                            "date": "2024-02-12",
+                            "day": "Lunes",
+                            "orchard": "Rio Orchard",
+                            "workType": "Tutoring",
+                            "startTime": "08:00",
+                            "endTime": "17:00",
+                            "amBreak": true,
+                            "pmBreak": true,
+                            "notes": "✓"
+                        },
+                        {
+                            "date": "2024-02-13",
+                            "day": "Martes",
+                            "orchard": "Rio Orchard",
+                            "workType": "Tutoring",
+                            "startTime": "08:00",
+                            "endTime": "17:00",
+                            "amBreak": true,
+                            "pmBreak": true,
+                            "notes": "✓"
+                        },
+                        {
+                            "date": "2024-02-14",
+                            "day": "Miércoles",
+                            "orchard": "Rio Orchard",
+                            "workType": "Riego",
+                            "startTime": "07:00",
+                            "endTime": "15:00",
+                            "amBreak": true,
+                            "pmBreak": false,
+                            "notes": "🌧️ Lluvia"
+                        },
+                        {
+                            "date": "2024-02-15",
+                            "day": "Jueves",
+                            "orchard": "Rio Orchard",
+                            "workType": "Cosecha",
+                            "startTime": "08:00",
+                            "endTime": "18:00",
+                            "amBreak": true,
+                            "pmBreak": true,
+                            "notes": "✓"
+                        },
+                        {
+                            "date": "2024-02-16",
+                            "day": "Viernes",
+                            "orchard": "Santa Clara",
+                            "workType": "Tutoring",
+                            "startTime": "08:00",
+                            "endTime": "16:30",
+                            "amBreak": true,
+                            "pmBreak": true,
+                            "notes": "✓"
+                        },
+                        {
+                            "date": "2024-02-17",
+                            "day": "Sábado",
+                            "orchard": "Rio Orchard",
+                            "workType": "Mantenimiento",
+                            "startTime": "09:00",
+                            "endTime": "13:00",
+                            "amBreak": false,
+                            "pmBreak": false,
+                            "notes": "✓"
+                        },
+                        {
+                            "date": "2024-02-18",
+                            "day": "Domingo",
+                            "orchard": "",
+                            "workType": "",
+                            "startTime": "",
+                            "endTime": "",
+                            "amBreak": false,
+                            "pmBreak": false,
+                            "notes": "🆓"
+                        }
+                    ]
+                }
+            };
+
+            localStorage.setItem('timesheetData', JSON.stringify(demoData));
+            
+            const demoLocation = {
+                "lat": 37.3382,
+                "lng": -121.8863,
+                "address": "Rio Orchards, California, USA"
+            };
+            localStorage.setItem('orchardLocation', JSON.stringify(demoLocation));
+
+            alert('✅ Datos de demostración cargados correctamente!\nRedirigiendo a la aplicación...');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
