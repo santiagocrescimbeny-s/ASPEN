@@ -2,7 +2,8 @@ let editingEntryId = null;
 
 function renderTimesheet() {
     const tbody = document.getElementById('timesheetBody');
-    const data = AppCore.getTimesheetData();
+    if (!tbody) return;
+    const data = window.AppCore.getTimesheetData();
     tbody.innerHTML = '';
 
     const grouped = data.reduce((acc, entry) => {
@@ -39,40 +40,16 @@ function renderTimesheet() {
             <td class="cell-hours">${totalHours > 0 ? totalHours.toFixed(2) + ' hrs' : '-'}</td>
             <td class="cell-notes">${notes}</td>
             <td class="cell-actions">
-                <button class="action-btn edit" onclick="openEditModal(${entries[0].id})" title="Editar"><i class="fas fa-edit"></i></button>
-                <button class="action-btn delete" onclick="deleteEntry(${entries[0].id})" title="Eliminar"><i class="fas fa-trash"></i></button>
+                <button class="action-btn edit" onclick="window.openEditModal('${entries[0].id}')" title="Editar"><i class="fas fa-edit"></i></button>
+                <button class="action-btn delete" onclick="window.deleteEntry('${entries[0].id}')" title="Eliminar"><i class="fas fa-trash"></i></button>
             </td>
         `;
         tbody.appendChild(row);
     });
 }
 
-function createRow(entry) {
-    const row = document.createElement('tr');
-
-    const start = entry.startTime || '-';
-    const end = entry.endTime || '-';
-
-    row.innerHTML = `
-        <td>${entry.day || '-'}</td>
-        <td>${formatDateForDisplay(entry.date)}</td>
-        <td>${entry.orchard || '-'}</td>
-        <td>${entry.workType || '-'}</td>
-        <td>${entry.location && entry.location.address ? entry.location.address : '-'}</td>
-        <td>${start}</td>
-        <td style="text-align:center">${entry.amBreak ? '✓' : '-'}</td>
-        <td style="text-align:center">${entry.pmBreak ? '✓' : '-'}</td>
-        <td>${end}</td>
-        <td class="cell-hours">${entry.hours > 0 ? entry.hours.toFixed(2) + ' hrs' : '-'}</td>
-        <td class="cell-notes">${entry.notes || '-'}</td>
-        <td class="cell-actions">
-            <button class="action-btn edit" onclick="openEditModal(${entry.id})" title="Editar"><i class="fas fa-edit"></i></button>
-            <button class="action-btn delete" onclick="deleteEntry(${entry.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
-        </td>
-    `;
-
-    return row;
-}
+// Global exposure
+window.renderTimesheet = renderTimesheet;
 
 function formatDateForDisplay(dateStr) {
     if (!dateStr) return '-';
@@ -93,7 +70,7 @@ function openEditModalForNew() {
     const elOrch = document.getElementById('editOrchard'); if (elOrch) elOrch.value = '';
     const workEl = document.getElementById('editWorkType'); if (workEl) workEl.value = '';
     const locDisplay = document.getElementById('editLocationDisplay'); if (locDisplay) locDisplay.textContent = 'Sin ubicación seleccionada';
-    AppCore.setLocation(null);
+    window.AppCore.setLocation(null);
     const sText = document.getElementById('editStartTimeText'); if (sText) sText.value = '';
     const sToggle = document.getElementById('editStartAmPmToggle'); if (sToggle) sToggle.checked = false;
     const sLabel = document.getElementById('editStartAmPmLabel'); if (sLabel) sLabel.textContent = 'AM';
@@ -106,9 +83,10 @@ function openEditModalForNew() {
     const hoursEl = document.getElementById('editHoursResult'); if (hoursEl) hoursEl.textContent = '0.00 hrs';
     const modalEl = document.getElementById('editModal'); if (modalEl) modalEl.classList.add('show');
 }
+window.openEditModalForNew = openEditModalForNew;
 
 function openEditModal(id) {
-    const data = AppCore.getTimesheetData();
+    const data = window.AppCore.getTimesheetData();
     const entry = data.find(e => e.id === id);
     if (!entry) return;
 
@@ -121,10 +99,10 @@ function openEditModal(id) {
     const locDisplay = document.getElementById('editLocationDisplay');
     if (entry.location && entry.location.address) {
         if (locDisplay) locDisplay.textContent = entry.location.address;
-        AppCore.setLocation(entry.location);
+        window.AppCore.setLocation(entry.location);
     } else {
         if (locDisplay) locDisplay.textContent = 'Sin ubicación seleccionada';
-        AppCore.setLocation(null);
+        window.AppCore.setLocation(null);
     }
 
     const s = entry.startTime ? convert24To12(entry.startTime) : { h: '', m: '00', ampm: 'AM' };
@@ -145,143 +123,91 @@ function openEditModal(id) {
     const modalEl = document.getElementById('editModal'); if (modalEl) modalEl.classList.add('show');
     updateEditHours();
 }
+window.openEditModal = openEditModal;
 
 function closeEditModal() {
-    document.getElementById('editModal').classList.remove('show');
+    const modal = document.getElementById('editModal');
+    if (modal) modal.classList.remove('show');
     editingEntryId = null;
 }
+window.closeEditModal = closeEditModal;
 
 function convert12hTo24(hourStr, minStr, ampm) {
     if (!hourStr) return '';
-    let h = 0;
-    let m = 0;
+    let h = 0, m = 0;
     if (typeof hourStr === 'string' && hourStr.includes(':')) {
         const parts = hourStr.split(':').map(Number);
-        h = parts[0];
-        m = parts[1] || 0;
+        h = parts[0]; m = parts[1] || 0;
     } else {
-        h = parseInt(hourStr, 10);
-        m = parseInt(minStr || '0', 10);
+        h = parseInt(hourStr, 10); m = parseInt(minStr || '0', 10);
     }
     if (isNaN(h) || isNaN(m)) return '';
-    if (ampm === 'AM') {
-        if (h === 12) h = 0;
-    } else {
-        if (h !== 12) h = h + 12;
-    }
+    if (ampm === 'AM') { if (h === 12) h = 0; } else { if (h !== 12) h = h + 12; }
     return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 }
 
 function convert24To12(timeStr) {
     if (!timeStr) return { h: '', m: '', ampm: 'AM' };
     const [hh, mm] = timeStr.split(':').map(Number);
-    let ampm = 'AM';
-    let h = hh;
-    if (hh === 0) { h = 12; ampm = 'AM'; }
-    else if (hh === 12) { h = 12; ampm = 'PM'; }
-    else if (hh > 12) { h = hh - 12; ampm = 'PM'; }
-    else { ampm = 'AM'; }
+    let ampm = 'AM', h = hh;
+    if (hh === 0) h = 12; else if (hh === 12) ampm = 'PM'; else if (hh > 12) { h = hh - 12; ampm = 'PM'; }
     return { h: String(h), m: String(mm).padStart(2, '0'), ampm };
 }
 
 function updateEditHours() {
-    const startText = normalizeTimeInput(document.getElementById('editStartTimeText').value);
-    const startIsPm = document.getElementById('editStartAmPmToggle').checked;
-
-    const endText = normalizeTimeInput(document.getElementById('editEndTimeText').value);
-    const endIsPm = document.getElementById('editEndAmPmToggle').checked;
-
-    const amBreak = document.getElementById('editAMBreak').checked;
-    const pmBreak = document.getElementById('editPMBreak').checked;
+    const startText = normalizeTimeInput(document.getElementById('editStartTimeText')?.value);
+    const startIsPm = document.getElementById('editStartAmPmToggle')?.checked;
+    const endText = normalizeTimeInput(document.getElementById('editEndTimeText')?.value);
+    const endIsPm = document.getElementById('editEndAmPmToggle')?.checked;
+    const amBreak = document.getElementById('editAMBreak')?.checked;
+    const pmBreak = document.getElementById('editPMBreak')?.checked;
 
     const start = convert12hTo24(startText, null, startIsPm ? 'PM' : 'AM');
     const end = convert12hTo24(endText, null, endIsPm ? 'PM' : 'AM');
 
-    const hours = AppCore.calculateHours(start, end, amBreak, pmBreak);
-    document.getElementById('editHoursResult').textContent = (isNaN(hours) ? '0.00' : hours.toFixed(2)) + ' hrs';
+    const hours = window.AppCore.calculateHours(start, end, amBreak, pmBreak);
+    const resEl = document.getElementById('editHoursResult');
+    if (resEl) resEl.textContent = (isNaN(hours) ? '0.00' : hours.toFixed(2)) + ' hrs';
 }
+window.updateEditHours = updateEditHours;
 
-function saveEditedDay() {
+async function saveEditedDay() {
     const date = document.getElementById('editDate').value;
     const day = document.getElementById('editDay').value;
     const orchard = document.getElementById('editOrchard').value;
-    const workTypeEl = document.getElementById('editWorkType');
-    const workType = workTypeEl ? workTypeEl.value : '';
-
+    const workType = document.getElementById('editWorkType')?.value || '';
     const startText = normalizeTimeInput(document.getElementById('editStartTimeText').value);
     const startIsPm = document.getElementById('editStartAmPmToggle').checked;
     const endText = normalizeTimeInput(document.getElementById('editEndTimeText').value);
     const endIsPm = document.getElementById('editEndAmPmToggle').checked;
-
     const startTime = convert12hTo24(startText, null, startIsPm ? 'PM' : 'AM');
     const endTime = convert12hTo24(endText, null, endIsPm ? 'PM' : 'AM');
-
     const amBreak = document.getElementById('editAMBreak').checked;
     const pmBreak = document.getElementById('editPMBreak').checked;
     const notes = document.getElementById('editNotes').value;
-
-    const hours = AppCore.calculateHours(startTime, endTime, amBreak, pmBreak);
+    const hours = window.AppCore.calculateHours(startTime, endTime, amBreak, pmBreak);
+    const location = window.AppCore.getLocation();
 
     if ((startTime && endTime) && hours === 0) {
         showEditAlert('Las horas calculadas están por debajo de los breaks', 'error');
         return;
     }
 
-    const location = AppCore.getLocation();
-
     if (editingEntryId) {
-        const success = AppCore.updateEntryById(editingEntryId, {
-            date,
-            day,
-            orchard,
-            workType,
-            startTime,
-            endTime,
-            amBreak,
-            pmBreak,
-            notes,
-            location,
-            hours
+        const success = await window.AppCore.updateEntryById(editingEntryId, {
+            date, day, orchard, workType, startTime, endTime, amBreak, pmBreak, notes, location, hours
         });
-
         if (success) {
-            renderTimesheet();
             closeEditModal();
             showEditAlert('Jornada actualizada', 'success');
         } else {
             showEditAlert('Error al actualizar jornada', 'error');
         }
     } else {
-        const newId = AppCore.addEntry({
-            date,
-            day,
-            orchard,
-            workType,
-            startTime,
-            endTime,
-            amBreak,
-            pmBreak,
-            notes,
-            location,
-            hours
+        const newId = await window.AppCore.addEntry({
+            date, day, orchard, workType, startTime, endTime, amBreak, pmBreak, notes, location, hours
         });
         if (newId) {
-            const currentWeekStart = AppCore.getCurrentWeekStart();
-            const entryDate = new Date(date + 'T00:00:00');
-            const entryWeekStart = new Date(entryDate);
-            const day = entryWeekStart.getDay();
-            const diff = entryWeekStart.getDate() - day + (day === 0 ? -6 : 1);
-            entryWeekStart.setDate(diff);
-
-            currentWeekStart.setHours(0, 0, 0, 0);
-            entryWeekStart.setHours(0, 0, 0, 0);
-
-            if (currentWeekStart.getTime() !== entryWeekStart.getTime()) {
-                AppCore.goToDate(date);
-            } else {
-                renderTimesheet();
-            }
-
             closeEditModal();
             showEditAlert('Jornada agregada', 'success');
         } else {
@@ -289,42 +215,36 @@ function saveEditedDay() {
         }
     }
 }
+window.saveEditedDay = saveEditedDay;
 
-function deleteEntry(id) {
+async function deleteEntry(id) {
     if (!confirm('¿Estás seguro de que deseas eliminar esta jornada?')) return;
-    const success = AppCore.deleteEntryById(id);
+    const success = await window.AppCore.deleteEntryById(id);
     if (success) {
-        renderTimesheet();
         showEditAlert('Jornada eliminada', 'success');
     }
 }
+window.deleteEntry = deleteEntry;
 
 function showEditAlert(message, type) {
     let alertBox = document.getElementById('editAlert');
-
     if (!alertBox) {
         alertBox = document.createElement('div');
         alertBox.id = 'editAlert';
         alertBox.className = 'alert';
         document.querySelector('#editModal .modal-body').insertBefore(alertBox, document.querySelector('#editModal .modal-body').firstChild);
     }
-
     alertBox.className = `alert alert-${type} show`;
     alertBox.textContent = message;
     alertBox.style.display = 'block';
-
-    setTimeout(() => {
-        alertBox.style.display = 'none';
-    }, 3000);
+    setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
 }
 
 function exportToPDF() {
-    const user = AppCore.getCurrentUser();
-    const data = AppCore.getTimesheetData();
-    const weekStart = AppCore.getCurrentWeekStart();
-
+    const user = window.AppCore.getCurrentUser();
+    const data = window.AppCore.getTimesheetData();
+    const weekStart = window.AppCore.getCurrentWeekStart();
     const htmlContent = buildPDFContent(user, data, weekStart);
-
     const options = {
         margin: 10,
         filename: `Timesheet_${user.firstName}_${user.lastName}_${weekStart.toISOString().split('T')[0]}.pdf`,
@@ -332,30 +252,21 @@ function exportToPDF() {
         html2canvas: { scale: 2 },
         jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' }
     };
-
     html2pdf().set(options).from(htmlContent).save();
 }
+window.exportToPDF = exportToPDF;
 
 function buildPDFContent(user, data, weekStart) {
     const monthNames = ['Enero', 'Feb', 'Mar', 'Abr', 'Mayo', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const endDate = new Date(weekStart);
     endDate.setDate(endDate.getDate() + 6);
-
     const weekDescriptor = `${weekStart.getDate()} al ${endDate.getDate()} de ${monthNames[weekStart.getMonth()]}`;
+    let totalHours = 0, daysWorked = 0, tableRows = '';
 
-    let totalHours = 0;
-    let daysWorked = 0;
-    let tableRows = '';
-
-    data.forEach((day, index) => {
-        if (day.hours > 0) {
-            totalHours += parseFloat(day.hours);
-            daysWorked++;
-        }
-
+    data.forEach((day) => {
+        if (day.hours > 0) { totalHours += parseFloat(day.hours); daysWorked++; }
         const dateObj = new Date(day.date + 'T00:00:00');
         const dateDisplay = `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${dateObj.getFullYear()}`;
-
         tableRows += `
             <tr>
                 <td style="border: 1px solid #ddd; padding: 8px;">${day.day}</td>
@@ -371,250 +282,120 @@ function buildPDFContent(user, data, weekStart) {
     });
 
     const avgHours = daysWorked > 0 ? (totalHours / daysWorked).toFixed(2) : 0;
-
-    const content = `
+    return `
         <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.4; font-size:12px;">
-            <style>
-                table { width:100%; border-collapse: collapse; table-layout: fixed; }
-                th, td { word-wrap: break-word; overflow-wrap: break-word; }
-                th { font-size:11px; }
-                td { font-size:11px; }
-                .pdf-header { background: #1a365d; color: white; padding: 12px; border-radius:6px; text-align:center; }
-                .small-muted { font-size:10px; color:#666; }
-            </style>
-            <div class="pdf-header">
-                <h1 style="margin:0; font-size:20px;">Orchard Time</h1>
-                <p class="small-muted" style="margin:6px 0 0 0;">Reporte de Jornadas Laborales</p>
-            </div>
-            
             <div style="background: linear-gradient(135deg, #1a365d 0%, #2c5aa0 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                <h1 style="margin: 0 0 10px 0; font-size: 28px;">🥝 Orchard Time</h1>
-                <p style="margin: 0; font-size: 14px;">Reporte de Jornadas Laborales</p>
+                <h1 style="margin: 0; font-size: 28px;">🥝 Orchard Time</h1>
             </div>
-
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
                 <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #0066cc;">
-                    <p style="margin: 0 0 8px 0; font-weight: bold; color: #1a365d;">Información del Trabajador</p>
-                    <p style="margin: 5px 0;"><strong>Nombre:</strong> ${user.firstName} ${user.lastName}</p>
-                    <p style="margin: 5px 0;"><strong>IRD:</strong> ${user.ird}</p>
-                    <p style="margin: 5px 0;"><strong>Pasaporte:</strong> ${user.passport}</p>
+                    <p><strong>Nombre:</strong> ${user.firstName} ${user.lastName}</p>
+                    <p><strong>IRD:</strong> ${user.ird}</p>
                 </div>
                 <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #22b55f;">
-                    <p style="margin: 0 0 8px 0; font-weight: bold; color: #1a365d;">Información Adicional</p>
-                    <p style="margin: 5px 0;"><strong>Domicilio:</strong> ${user.address}</p>
-                    <p style="margin: 5px 0;"><strong>Tax Code:</strong> ${user.taxCode}</p>
-                    <p style="margin: 5px 0;"><strong>Período:</strong> Semana del ${weekDescriptor}</p>
+                    <p><strong>Período:</strong> Semana del ${weekDescriptor}</p>
+                    <p><strong>Tax Code:</strong> ${user.taxCode}</p>
                 </div>
             </div>
-
-            <div style="margin-bottom: 20px;">
-                <h3 style="color: #1a365d; border-bottom: 2px solid #0066cc; padding-bottom: 10px; margin-bottom: 15px;">Detalle de Jornadas</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-                    <thead>
-                        <tr style="background: linear-gradient(135deg, #1a365d 0%, #2c5aa0 100%); color: white;">
-                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold;">Día</th>
-                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold;">Fecha</th>
-                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold;">Tipo de Trabajo</th>
-                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold;">Huerto</th>
-                            <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">Inicio</th>
-                            <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold;">Fin</th>
-                            <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: bold; background: #0066cc;">Horas</th>
-                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: bold;">Notas</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableRows}
-                    </tbody>
-                </table>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
-                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #0066cc; text-align: center;">
-                    <p style="margin: 0 0 8px 0; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">Horas Totales</p>
-                    <p style="margin: 0; font-size: 24px; font-weight: bold; color: #0066cc;">${totalHours.toFixed(2)}</p>
-                </div>
-                <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; border-left: 4px solid #1a365d; text-align: center;">
-                    <p style="margin: 0 0 8px 0; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">Días Trabajados</p>
-                    <p style="margin: 0; font-size: 24px; font-weight: bold; color: #1a365d;">${daysWorked}</p>
-                </div>
-                <div style="background: #efe; padding: 15px; border-radius: 8px; border-left: 4px solid #22b55f; text-align: center;">
-                    <p style="margin: 0 0 8px 0; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">Promedio/Día</p>
-                    <p style="margin: 0; font-size: 24px; font-weight: bold; color: #22b55f;">${avgHours}</p>
-                </div>
-            </div>
-
-            <div style="border-top: 2px solid #ddd; padding-top: 15px; text-align: center; font-size: 12px; color: #999;">
-                <p style="margin: 0;">Generado por Orchard Time - ${new Date().toLocaleDateString('es-AR')}</p>
-                <p style="margin: 5px 0 0 0;">Este documento fue generado automáticamente y es válido sin firma.</p>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                <thead>
+                    <tr style="background: #1a365d; color: white;">
+                        <th style="padding: 10px; border: 1px solid #ddd;">Día</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">Fecha</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">Trabajo</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">Huerto</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">Inicio</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">Fin</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">Horas</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">Notas</th>
+                    </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+            </table>
+            <div style="display: flex; gap: 20px; justify-content: center;">
+                <p><strong>Total:</strong> ${totalHours.toFixed(2)} hrs</p>
+                <p><strong>Días:</strong> ${daysWorked}</p>
+                <p><strong>Promedio:</strong> ${avgHours} hrs/día</p>
             </div>
         </div>
     `;
-
-    return content;
 }
 
 function openMapModal() {
     document.getElementById('mapModal').classList.add('show');
-    setTimeout(() => {
-        initializeMap();
-    }, 100);
+    if (window.initializeMap) setTimeout(() => { window.initializeMap(); }, 100);
 }
+window.openMapModal = openMapModal;
 
 function closeMapModal() {
     document.getElementById('mapModal').classList.remove('show');
 }
+window.closeMapModal = closeMapModal;
 
 function confirmLocation() {
     const lat = parseFloat(document.getElementById('mapLat').value);
     const lng = parseFloat(document.getElementById('mapLng').value);
-
-    const address = (document.getElementById('mapAddress') && document.getElementById('mapAddress').value) ? document.getElementById('mapAddress').value : '';
-
+    const address = document.getElementById('mapAddress')?.value || '';
     if (lat && lng) {
-        AppCore.setLocation({ lat, lng, address });
+        window.AppCore.setLocation({ lat, lng, address });
         const locDisplay = document.getElementById('editLocationDisplay'); if (locDisplay) locDisplay.textContent = address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
         closeMapModal();
     } else {
         alert('Por favor, selecciona una ubicación válida en el mapa');
     }
 }
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeEditModal();
-        closeMapModal();
-    }
-});
-
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal')) {
-        if (e.target.id === 'editModal') closeEditModal();
-        if (e.target.id === 'mapModal') closeMapModal();
-    }
-});
+window.confirmLocation = confirmLocation;
 
 function autoSetDayOfWeek() {
     const dateVal = document.getElementById('editDate').value;
     if (!dateVal) return;
     const d = new Date(dateVal + 'T00:00:00');
     const names = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    const name = names[d.getDay()];
-    const daySelect = document.getElementById('editDay');
-    if (daySelect) {
-        daySelect.value = name;
-    }
+    const el = document.getElementById('editDay'); if (el) el.value = names[d.getDay()];
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const dateInput = document.getElementById('editDate');
-    if (dateInput) dateInput.addEventListener('change', autoSetDayOfWeek);
-
-    const locBtn = document.getElementById('locationInfoBtn');
-    if (locBtn) locBtn.addEventListener('click', openMapModal);
-
-    const startText = document.getElementById('editStartTimeText');
-    const endText = document.getElementById('editEndTimeText');
-    const startToggle = document.getElementById('editStartAmPmToggle');
-    const endToggle = document.getElementById('editEndAmPmToggle');
-    const startLabel = document.getElementById('editStartAmPmLabel');
-    const endLabel = document.getElementById('editEndAmPmLabel');
-
-    if (startText) startText.addEventListener('input', onStartTimeInput);
-    if (endText) endText.addEventListener('input', onEndTimeInput);
-    if (startText) startText.addEventListener('blur', onStartTimeBlur);
-    if (endText) endText.addEventListener('blur', onEndTimeBlur);
-    if (startToggle) startToggle.addEventListener('change', () => {
-        if (startLabel) startLabel.textContent = startToggle.checked ? 'PM' : 'AM';
-        updateEditHours();
-    });
-    if (endToggle) endToggle.addEventListener('change', () => {
-        if (endLabel) endLabel.textContent = endToggle.checked ? 'PM' : 'AM';
-        updateEditHours();
-    });
-});
+window.autoSetDayOfWeek = autoSetDayOfWeek;
 
 function normalizeTimeInput(val) {
     if (!val) return '';
     const t = val.trim();
     if (/^\d{1,4}$/.test(t)) {
-        if (t.length <= 2) {
-            return String(parseInt(t, 10)) + ':00';
-        }
-        if (t.length === 3) {
-            const h = String(parseInt(t.slice(0, 1), 10));
-            const mm = String(parseInt(t.slice(1), 10)).padStart(2, '0');
-            return h + ':' + mm;
-        }
-        if (t.length === 4) {
-            const h = String(parseInt(t.slice(0, 2), 10));
-            const mm = String(parseInt(t.slice(2), 10)).padStart(2, '0');
-            return h + ':' + mm;
-        }
+        if (t.length <= 2) return String(parseInt(t, 10)) + ':00';
+        if (t.length === 3) return t.slice(0, 1) + ':' + t.slice(1).padStart(2, '0');
+        if (t.length === 4) return t.slice(0, 2) + ':' + t.slice(2).padStart(2, '0');
     }
     const m = t.match(/^(\d{1,2}):(\d{1,2})$/);
     if (m) {
-        let hh = parseInt(m[1], 10);
-        const mm = String(parseInt(m[2], 10)).padStart(2, '0');
-        if (hh === 0) {
-            hh = 12;
-        } else if (hh > 12) {
-            hh = hh - 12;
-        }
+        let hh = parseInt(m[1], 10); const mm = String(parseInt(m[2], 10)).padStart(2, '0');
+        if (hh === 0) hh = 12; else if (hh > 12) hh = hh - 12;
         return String(hh) + ':' + mm;
     }
     return t;
 }
 
-function onStartTimeInput() {
-    const el = document.getElementById('editStartTimeText');
-    if (!el) return;
-    updateEditHours();
-}
-
-function onEndTimeInput() {
-    const el = document.getElementById('editEndTimeText');
-    if (!el) return;
-    updateEditHours();
-}
+function onStartTimeInput() { updateEditHours(); }
+window.onStartTimeInput = onStartTimeInput;
+function onEndTimeInput() { updateEditHours(); }
+window.onEndTimeInput = onEndTimeInput;
 
 function onStartTimeBlur() {
-    const el = document.getElementById('editStartTimeText');
-    if (!el) return;
-    const original = el.value && el.value.trim();
-    const formatted = normalizeTimeInput(original);
+    const el = document.getElementById('editStartTimeText'); if (!el) return;
+    const formatted = normalizeTimeInput(el.value);
     if (formatted) el.value = formatted;
-    const std = (original || '').match(/^(\d{1,2}):(\d{2})$/);
-    if (std) {
-        const origH = parseInt(std[1], 10);
-        const toggle = document.getElementById('editStartAmPmToggle');
-        const label = document.getElementById('editStartAmPmLabel');
-        if (toggle) {
-            if (origH === 0) { toggle.checked = false; if (label) label.textContent = 'AM'; }
-            else if (origH === 12) { toggle.checked = true; if (label) label.textContent = 'PM'; }
-            else if (origH > 12) { toggle.checked = true; if (label) label.textContent = 'PM'; }
-            else { toggle.checked = false; if (label) label.textContent = 'AM'; }
-        }
-    }
     updateEditHours();
 }
+window.onStartTimeBlur = onStartTimeBlur;
 
 function onEndTimeBlur() {
-    const el = document.getElementById('editEndTimeText');
-    if (!el) return;
-    const original = el.value && el.value.trim();
-    const formatted = normalizeTimeInput(original);
+    const el = document.getElementById('editEndTimeText'); if (!el) return;
+    const formatted = normalizeTimeInput(el.value);
     if (formatted) el.value = formatted;
-    const std = (original || '').match(/^(\d{1,2}):(\d{2})$/);
-    if (std) {
-        const origH = parseInt(std[1], 10);
-        const toggle = document.getElementById('editEndAmPmToggle');
-        const label = document.getElementById('editEndAmPmLabel');
-        if (toggle) {
-            if (origH === 0) { toggle.checked = false; if (label) label.textContent = 'AM'; }
-            else if (origH === 12) { toggle.checked = true; if (label) label.textContent = 'PM'; }
-            else if (origH > 12) { toggle.checked = true; if (label) label.textContent = 'PM'; }
-            else { toggle.checked = false; if (label) label.textContent = 'AM'; }
-        }
-    }
     updateEditHours();
 }
+window.onEndTimeBlur = onEndTimeBlur;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const dateInput = document.getElementById('editDate');
+    if (dateInput) dateInput.addEventListener('change', autoSetDayOfWeek);
+    const locBtn = document.getElementById('locationInfoBtn');
+    if (locBtn) locBtn.addEventListener('click', openMapModal);
+});

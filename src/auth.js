@@ -1,158 +1,83 @@
+import { auth, db } from './firebase-config.js';
+import {
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+    doc,
+    setDoc,
+    getDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
 const AuthManager = (() => {
-    const USERS_KEY = 'agritime_users';
-    const SESSION_KEY = 'agritime_session';
+    let currentSession = null;
 
-    const authLogs = [];
-    function logAuth(message) {
+    async function register(userData) {
+        if (!userData.email || !userData.email.trim()) return { success: false, error: 'El email es requerido' };
+        if (!userData.password || userData.password.length < 6) return { success: false, error: 'La contraseña debe tener al menos 6 caracteres' };
+
         try {
-            const ts = new Date().toISOString();
-            authLogs.unshift(`${ts} - ${message}`);
-            if (authLogs.length > 200) authLogs.length = 200;
-        } catch (e) { }
-    }
-    function getAuthLogs() { return authLogs.slice(); }
-    function clearAuthLogs() { authLogs.length = 0; }
+            const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
+            const user = userCredential.user;
 
-    function getAllUsers() {
-        const stored = localStorage.getItem(USERS_KEY);
-        if (!stored) return [];
-        try {
-            return JSON.parse(stored);
-        } catch (e) {
-            try { localStorage.removeItem(USERS_KEY); } catch (e) { }
-            return [];
-        }
-    }
-
-    function register(userData) {
-        if (!userData.email || !userData.email.trim()) {
-            return { success: false, error: 'El email es requerido' };
-        }
-        if (!isValidEmail(userData.email)) {
-            return { success: false, error: 'Por favor, ingresa un email válido' };
-        }
-        if (!userData.password || userData.password.length < 6) {
-            return { success: false, error: 'La contraseña debe tener al menos 6 caracteres' };
-        }
-        if (userData.password !== userData.passwordConfirm) {
-            return { success: false, error: 'Las contraseñas no coinciden' };
-        }
-
-        logAuth(`register attempt: ${userData.email}`);
-        const users = getAllUsers();
-        if (users.some(u => u.email === userData.email.toLowerCase())) {
-            return { success: false, error: 'Ya existe una cuenta con ese email' };
-        }
-        const newUser = {
-            email: userData.email.toLowerCase(),
-            password: btoa(userData.password),
-            firstName: userData.firstName || 'Usuario',
-            lastName: userData.lastName || 'Prueba',
-            ird: userData.ird || '12345678',
-            passport: userData.passport || 'AR123456789',
-            address: userData.address || 'Dirección',
-            taxCode: userData.taxCode || 'AR20123456780',
-            createdAt: new Date().toISOString()
-        };
-        users.push(newUser);
-        try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch (e) { }
-
-        const session = {
-            email: newUser.email,
-            firstName: newUser.firstName,
-            lastName: newUser.lastName,
-            ird: newUser.ird,
-            passport: newUser.passport,
-            address: newUser.address,
-            taxCode: newUser.taxCode,
-            loginTime: new Date().toISOString()
-        };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-        logAuth(`register success: ${newUser.email}`);
-
-        return { success: true, user: session };
-    }
-
-    function login(email, password) {
-        email = (email || '').toString().trim();
-        password = (password || '').toString();
-        if (!email || !password) {
-            return { success: false, error: 'Email y contraseña son requeridos' };
-        }
-
-        if (!isValidEmail(email)) {
-            return { success: false, error: 'Por favor, ingresa un email válido' };
-        }
-
-        logAuth(`login attempt: ${email}`);
-        const users = getAllUsers();
-        const user = users.find(u => u.email === email.toLowerCase());
-        if (!user) {
-            logAuth(`login user-not-found: ${email}`);
-            return { success: false, error: 'Usuario no encontrado. Regístrate primero.' };
-        }
-
-        if (!user.password) {
-            const session = {
+            // Store additional data in Firestore
+            const userDetails = {
+                uid: user.uid,
                 email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                ird: user.ird || '',
-                passport: user.passport || '',
-                address: user.address || '',
-                taxCode: user.taxCode || '',
-                loginTime: new Date().toISOString()
+                firstName: userData.firstName || '',
+                lastName: userData.lastName || '',
+                ird: userData.ird || '',
+                passport: userData.passport || '',
+                address: userData.address || '',
+                taxCode: userData.taxCode || '',
+                createdAt: new Date().toISOString()
             };
-            localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-            return { success: true, user: session };
-        }
 
-        const encoded = btoa(password);
-        if (encoded !== user.password) {
-            logAuth(`login bad-password: ${email}`);
-            return { success: false, error: 'Contraseña incorrecta' };
-        }
+            await setDoc(doc(db, "users", user.uid), userDetails);
 
-        const session = {
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            ird: user.ird || '',
-            passport: user.passport || '',
-            address: user.address || '',
-            taxCode: user.taxCode || '',
-            loginTime: new Date().toISOString()
-        };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-        logAuth(`login success: ${user.email}`);
-        return { success: true, user: session };
+            return { success: true, user: userDetails };
+        } catch (error) {
+            console.error("Error signing up:", error);
+            let errorMessage = 'Error al registrarse';
+            if (error.code === 'auth/email-already-in-use') errorMessage = 'El email ya está en uso';
+            return { success: false, error: errorMessage };
+        }
     }
 
-    function logout() {
-        localStorage.removeItem(SESSION_KEY);
+    async function login(email, password) {
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+                return { success: true, user: userDoc.data() };
+            } else {
+                return { success: false, error: 'Perfil de usuario no encontrado' };
+            }
+        } catch (error) {
+            console.error("Error logging in:", error);
+            let errorMessage = 'Email o contraseña incorrectos';
+            return { success: false, error: errorMessage };
+        }
+    }
+
+    async function logout() {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error("Error signing out:", error);
+        }
     }
 
     function getCurrentSession() {
-        const stored = localStorage.getItem(SESSION_KEY);
-        if (!stored) return null;
-        try {
-            return JSON.parse(stored);
-        } catch (e) {
-            try { localStorage.removeItem(SESSION_KEY); } catch (e) { }
-            return null;
-        }
+        return currentSession;
     }
 
     function isLoggedIn() {
-        return getCurrentSession() !== null;
-    }
-
-    function isValidEmail(email) {
-        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return regex.test(email);
-    }
-
-    function init() {
+        return !!auth.currentUser;
     }
 
     return {
@@ -161,135 +86,71 @@ const AuthManager = (() => {
         logout,
         getCurrentSession,
         isLoggedIn,
-        getAllUsers,
-        getAuthLogs,
-        clearAuthLogs,
-        init
+        setSession: (s) => { currentSession = s; }
     };
 })();
 
-function handleRegister() {
+// UI Handlers
+async function handleRegister() {
     try {
-        function safeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+        const safeVal = (id) => document.getElementById(id)?.value || '';
 
-        const firstName = safeVal('regFirstName');
-        const lastName = safeVal('regLastName');
-        const email = safeVal('regEmail');
-        const ird = safeVal('regIRD');
-        const passport = safeVal('regPassport');
-        const address = safeVal('regAddress');
-        const taxCode = safeVal('regTaxCode');
-        const password = safeVal('regPassword');
-        const passwordConfirm = safeVal('regPasswordConfirm');
+        const userData = {
+            firstName: safeVal('regFirstName'),
+            lastName: safeVal('regLastName'),
+            email: safeVal('regEmail'),
+            ird: safeVal('regIRD'),
+            passport: safeVal('regPassport'),
+            address: safeVal('regAddress'),
+            taxCode: safeVal('regTaxCode'),
+            password: safeVal('regPassword'),
+            passwordConfirm: safeVal('regPasswordConfirm')
+        };
 
-        if (!email || !email.trim()) { showAlert('El email es requerido', 'error'); return; }
-        if (!password || password.length < 6) { showAlert('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
-        if (password !== passwordConfirm) { showAlert('Las contraseñas no coinciden', 'error'); return; }
+        if (userData.password !== userData.passwordConfirm) {
+            showAlert('Las contraseñas no coinciden', 'error');
+            return;
+        }
 
-        const result = AuthManager.register({
-            firstName,
-            lastName,
-            email,
-            ird,
-            passport,
-            address,
-            taxCode,
-            password,
-            passwordConfirm
-        });
-
+        const result = await AuthManager.register(userData);
         if (result.success) {
-            showAlert('¡Registro exitoso! Sesión iniciada.', 'success');
-            setTimeout(() => {
-                showAuthUI(false);
-                showAppUI(true);
-                initializeApp(result.user);
-            }, 700);
+            showAlert('¡Registro exitoso!', 'success');
         } else {
             showAlert(result.error, 'error');
         }
     } catch (err) {
-        showAlert('Error interno en el formulario de registro', 'error');
+        showAlert('Error en el registro', 'error');
     }
 }
 
-function handleLogin() {
-    try {
-        function safeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
-        const email = safeVal('loginEmail');
-        const password = safeVal('loginPassword');
+async function handleLogin() {
+    const email = document.getElementById('loginEmail')?.value;
+    const password = document.getElementById('loginPassword')?.value;
 
-        if (!email || !email.trim()) { showAlert('El email es requerido', 'error'); return; }
-        if (!password || password.length < 6) { showAlert('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
+    if (!email || !password) {
+        showAlert('Email y contraseña requeridos', 'error');
+        return;
+    }
 
-        const result = AuthManager.login(email, password);
-
-        if (result.success) {
-            showAuthUI(false);
-            showAppUI(true);
-            initializeApp(result.user);
-            showAlert('¡Bienvenido!', 'success');
-        } else {
-            showAlert(result.error, 'error');
-        }
-    } catch (err) {
-        showAlert('Error interno en el formulario de login', 'error');
+    const result = await AuthManager.login(email, password);
+    if (!result.success) {
+        showAlert(result.error, 'error');
     }
 }
 
 function handleLogout() {
     if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
         AuthManager.logout();
-        showAppUI(false);
-        showAuthUI(true);
-        clearAuthForms();
-        showAlert('Sesión cerrada correctamente', 'success');
     }
 }
 
 function toggleAuthForms(event) {
-    try {
-        if (event && typeof event.preventDefault === 'function') event.preventDefault();
-    } catch (e) { }
-
+    if (event) event.preventDefault();
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
-    if (!loginForm || !registerForm) return;
-
-    loginForm.classList.toggle('active');
-    registerForm.classList.toggle('active');
-}
-
-function clearAuthForms() {
-    function safeSet(id, v) { const el = document.getElementById(id); if (el) el.value = v; }
-    safeSet('loginEmail', '');
-    safeSet('loginPassword', '');
-    safeSet('regFirstName', '');
-    safeSet('regLastName', '');
-    safeSet('regEmail', '');
-    safeSet('regIRD', '');
-    safeSet('regPassport', '');
-    safeSet('regAddress', '');
-    safeSet('regTaxCode', '');
-    safeSet('regPassword', '');
-    safeSet('regPasswordConfirm', '');
-}
-
-function showAuthUI(show) {
-    const authContainer = document.getElementById('authContainer');
-    if (show) {
-        authContainer.classList.add('active');
-    } else {
-        authContainer.classList.remove('active');
-    }
-}
-
-function showAppUI(show) {
-    const appContainer = document.getElementById('appContainer');
-    if (show) {
-        appContainer.classList.add('active');
-    } else {
-        appContainer.classList.remove('active');
+    if (loginForm && registerForm) {
+        loginForm.classList.toggle('active');
+        registerForm.classList.toggle('active');
     }
 }
 
@@ -301,25 +162,46 @@ function showAlert(message, type) {
         alert.className = 'alert';
         document.body.insertBefore(alert, document.body.firstChild);
     }
-
     alert.className = `alert alert-${type} show`;
     alert.textContent = message;
-
-    setTimeout(() => {
-        alert.classList.remove('show');
-    }, 4000);
+    setTimeout(() => alert.classList.remove('show'), 4000);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    AuthManager.init();
+function showAuthUI(show) {
+    const authContainer = document.getElementById('authContainer');
+    if (authContainer) authContainer.classList.toggle('active', show);
+}
 
-    if (AuthManager.isLoggedIn()) {
-        const session = AuthManager.getCurrentSession();
-        if (typeof showAuthUI === 'function') showAuthUI(false);
-        if (typeof showAppUI === 'function') showAppUI(true);
-        if (typeof initializeApp === 'function') initializeApp(session);
+function showAppUI(show) {
+    const appContainer = document.getElementById('appContainer');
+    if (appContainer) appContainer.classList.toggle('active', show);
+}
+
+// Global exposure for HTML onclick handlers
+window.handleLogin = handleLogin;
+window.handleRegister = handleRegister;
+window.handleLogout = handleLogout;
+window.toggleAuthForms = toggleAuthForms;
+
+// Init Observer
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        try {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+                const session = userDoc.data();
+                AuthManager.setSession(session);
+                showAuthUI(false);
+                showAppUI(true);
+                // Trigger app initialization
+                if (window.initializeApp) window.initializeApp(session);
+            }
+        } catch (e) {
+            console.error("Error loading user profile", e);
+        }
     } else {
-        if (typeof showAuthUI === 'function') showAuthUI(true);
-        if (typeof showAppUI === 'function') showAppUI(false);
+        AuthManager.setSession(null);
+        showAuthUI(true);
+        showAppUI(false);
     }
 });

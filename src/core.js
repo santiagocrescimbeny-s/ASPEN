@@ -1,21 +1,28 @@
+import { db } from './firebase-config.js';
+import {
+    collection,
+    query,
+    where,
+    getDocs,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    doc,
+    setDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
 const AppCore = (() => {
     let currentUser = null;
     let currentWeekStart = null;
     let selectedLocation = null;
     let timesheetData = [];
 
-    const WORK_TYPES = [
-        'Tutoring', 'Riego', 'Cosecha', 'Podas',
-        'Mantenimiento', 'Fertilización', 'Inspección', 'Empaque'
-    ];
-
-    const STORAGE_KEY = 'agritime_timesheet_';
     const DAYS_OF_WEEK = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-    function init(user) {
+    async function init(user) {
         currentUser = user;
         currentWeekStart = getMonday(new Date());
-        loadTimesheetData();
+        await loadTimesheetData();
         updateUI();
     }
 
@@ -27,36 +34,41 @@ const AppCore = (() => {
         return new Date(d.setDate(diff));
     }
 
-    function getWeekKey() {
-        return STORAGE_KEY + currentUser.email + '_' + currentWeekStart.toISOString().split('T')[0];
+    function getWeekKey(date) {
+        const d = getMonday(date);
+        return d.toISOString().split('T')[0];
     }
 
-    function loadTimesheetData() {
-        const stored = localStorage.getItem(getWeekKey());
-        if (stored) {
-            timesheetData = JSON.parse(stored);
-        } else {
-            initializeWeekData();
+    async function loadTimesheetData() {
+        if (!currentUser) return;
+
+        const weekStr = getWeekKey(currentWeekStart);
+        const q = query(
+            collection(db, "timesheets"),
+            where("uid", "==", currentUser.uid),
+            where("weekStart", "==", weekStr)
+        );
+
+        try {
+            const querySnapshot = await getDocs(q);
+            timesheetData = [];
+            querySnapshot.forEach((doc) => {
+                timesheetData.push({ id: doc.id, ...doc.data() });
+            });
+        } catch (e) {
+            console.error("Error loading timesheet data:", e);
         }
     }
 
-    function initializeWeekData() {
-        timesheetData = [];
-        saveTimesheetData();
-    }
-
-    function saveTimesheetData() {
-        localStorage.setItem(getWeekKey(), JSON.stringify(timesheetData));
-    }
-
     function updateUI() {
+        // These updates are still DOM-based, they will be triggered after data is loaded
         updateHeader();
         updateSidebar();
-        renderTimesheet();
+        if (window.renderTimesheet) window.renderTimesheet();
     }
 
     function updateHeader() {
-        const lang = (typeof I18n !== 'undefined' && I18n.getLang) ? I18n.getLang() : 'es';
+        const lang = (window.I18n && window.I18n.getLang) ? window.I18n.getLang() : 'es';
         const monthNamesEs = ['Enero', 'Feb', 'Mar', 'Abr', 'Mayo', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
         const monthNamesEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const monthNames = lang === 'en' ? monthNamesEn : monthNamesEs;
@@ -75,18 +87,25 @@ const AppCore = (() => {
 
         const userNameEl = document.getElementById('userName'); if (userNameEl) userNameEl.textContent = `${currentUser.firstName} ${currentUser.lastName}`;
 
-        const paidKey = STORAGE_KEY + 'paid_' + currentUser.email + '_' + startDate.toISOString().split('T')[0];
-        const paid = localStorage.getItem(paidKey) === '1';
+        // Payment status in Firestore
+        loadPaymentStatus();
+    }
+
+    async function loadPaymentStatus() {
+        const weekStr = getWeekKey(currentWeekStart);
+        const paymentId = `${currentUser.uid}_${weekStr}`;
+        const paymentDoc = await getDoc(doc(db, "payments", paymentId));
+        const paid = paymentDoc.exists() && paymentDoc.data().paid;
+
         const weekToggle = document.getElementById('weekPaidToggle'); if (weekToggle) weekToggle.checked = paid;
-        setPaymentStatus(paid, false);
+        setPaymentStatusDisplay(paid);
     }
 
     function updateSidebar() {
-        document.getElementById('sidebarUserName').textContent =
-            `${currentUser.firstName} ${currentUser.lastName}`;
-        document.getElementById('sidebarUserIRD').textContent = currentUser.ird;
-        document.getElementById('sidebarUserAddress').textContent = currentUser.address;
-
+        if (!currentUser) return;
+        document.getElementById('sidebarUserName').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+        document.getElementById('sidebarUserIRD').textContent = currentUser.ird || '-';
+        document.getElementById('sidebarUserAddress').textContent = currentUser.address || '-';
         updateStatistics();
     }
 
@@ -116,29 +135,24 @@ const AppCore = (() => {
 
     function calculateHours(startTime, endTime, amBreak, pmBreak) {
         if (!startTime || !endTime) return 0;
-
         const [startHour, startMin] = startTime.split(':').map(Number);
         const [endHour, endMin] = endTime.split(':').map(Number);
-
         const startTotalMin = startHour * 60 + startMin;
         let endTotalMin = endHour * 60 + endMin;
-
         if (endTotalMin < startTotalMin) endTotalMin += 24 * 60;
-
         let diffMinutes = endTotalMin - startTotalMin;
-
         let breakMinutes = 0;
         if (amBreak) breakMinutes += 30;
-
+        if (pmBreak) breakMinutes += 30;
         const totalMinutes = diffMinutes - breakMinutes;
-        const hours = totalMinutes / 60;
-
-        return Math.max(0, parseFloat(hours.toFixed(2)));
+        return Math.max(0, parseFloat((totalMinutes / 60).toFixed(2)));
     }
 
-    function addEntry(entry) {
+    async function addEntry(entry) {
+        const weekStr = getWeekKey(new Date(entry.date + 'T00:00:00'));
         const newEntry = {
-            id: Date.now() + Math.floor(Math.random() * 1000),
+            uid: currentUser.uid,
+            weekStart: weekStr,
             date: entry.date || formatDate(new Date()),
             day: entry.day || '',
             orchard: entry.orchard || '',
@@ -149,141 +163,97 @@ const AppCore = (() => {
             amBreak: entry.amBreak || false,
             pmBreak: entry.pmBreak || false,
             notes: entry.notes || '',
-            hours: entry.hours || 0
+            hours: entry.hours || 0,
+            createdAt: new Date().toISOString()
         };
-        const entryWeekStart = getMonday(new Date(newEntry.date + 'T00:00:00'));
-        const entryWeekKey = STORAGE_KEY + currentUser.email + '_' + entryWeekStart.toISOString().split('T')[0];
-        const currentWeekKey = getWeekKey();
 
-        if (entryWeekKey !== currentWeekKey) {
-            const stored = localStorage.getItem(entryWeekKey);
-            const arr = stored ? JSON.parse(stored) : [];
-            arr.push(newEntry);
-            localStorage.setItem(entryWeekKey, JSON.stringify(arr));
-            return newEntry.id;
+        try {
+            const docRef = await addDoc(collection(db, "timesheets"), newEntry);
+            if (weekStr === getWeekKey(currentWeekStart)) {
+                timesheetData.push({ id: docRef.id, ...newEntry });
+                updateUI();
+            }
+            return docRef.id;
+        } catch (e) {
+            console.error("Error adding entry:", e);
+            return null;
         }
-
-        timesheetData.push(newEntry);
-        saveTimesheetData();
-        updateUI();
-        return newEntry.id;
     }
 
-    function updateEntryById(id, data) {
-        const idx = timesheetData.findIndex(e => e.id === id);
-        if (idx === -1) return false;
+    async function updateEntryById(id, data) {
         const hours = calculateHours(data.startTime, data.endTime, data.amBreak, data.pmBreak);
-        timesheetData[idx] = {
-            ...timesheetData[idx],
-            ...data,
-            hours
-        };
-        saveTimesheetData();
-        updateUI();
-        return true;
-    }
+        const updateData = { ...data, hours };
 
-    function deleteEntryById(id) {
-        const idx = timesheetData.findIndex(e => e.id === id);
-        if (idx === -1) return false;
-        timesheetData.splice(idx, 1);
-        saveTimesheetData();
-        updateUI();
-        return true;
-    }
-
-    function saveDay(dayIndex, data) {
-        if (dayIndex >= 0 && dayIndex < timesheetData.length) {
-            const hours = calculateHours(
-                data.startTime,
-                data.endTime,
-                data.amBreak,
-                data.pmBreak
-            );
-
-            timesheetData[dayIndex] = {
-                ...timesheetData[dayIndex],
-                ...data,
-                hours: hours
-            };
-
-            saveTimesheetData();
-            updateUI();
+        try {
+            await updateDoc(doc(db, "timesheets", id), updateData);
+            const idx = timesheetData.findIndex(e => e.id === id);
+            if (idx !== -1) {
+                timesheetData[idx] = { ...timesheetData[idx], ...updateData };
+                updateUI();
+            }
             return true;
+        } catch (e) {
+            console.error("Error updating entry:", e);
+            return false;
         }
-        return false;
     }
 
-    function deleteDay(dayIndex) {
-        if (dayIndex >= 0 && dayIndex < timesheetData.length) {
-            timesheetData[dayIndex] = {
-                ...timesheetData[dayIndex],
-                orchard: '',
-                workType: '',
-                startTime: '',
-                endTime: '',
-                amBreak: false,
-                pmBreak: false,
-                notes: '',
-                hours: 0
-            };
-            saveTimesheetData();
-            updateUI();
+    async function deleteEntryById(id) {
+        try {
+            await deleteDoc(doc(db, "timesheets", id));
+            const idx = timesheetData.findIndex(e => e.id === id);
+            if (idx !== -1) {
+                timesheetData.splice(idx, 1);
+                updateUI();
+            }
             return true;
+        } catch (e) {
+            console.error("Error deleting entry:", e);
+            return false;
         }
-        return false;
     }
 
-    function previousWeek() {
+    async function previousWeek() {
         currentWeekStart = new Date(currentWeekStart);
         currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-        loadTimesheetData();
+        await loadTimesheetData();
         updateUI();
     }
 
-    function nextWeek() {
+    async function nextWeek() {
         currentWeekStart = new Date(currentWeekStart);
         currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-        loadTimesheetData();
+        await loadTimesheetData();
         updateUI();
     }
 
-    function goToDate(date) {
+    async function goToDate(date) {
         currentWeekStart = getMonday(new Date(date));
-        loadTimesheetData();
+        await loadTimesheetData();
         updateUI();
     }
 
-    function getTimesheetData() {
-        return timesheetData;
-    }
+    async function setPaymentStatus(paid) {
+        if (!currentUser || !currentWeekStart) return;
+        const weekStr = getWeekKey(currentWeekStart);
+        const paymentId = `${currentUser.uid}_${weekStr}`;
 
-    function setLocation(location) {
-        selectedLocation = location;
-        updateLocationDisplay();
-    }
-
-    function getLocation() {
-        return selectedLocation;
-    }
-
-    function updateLocationDisplay() {
-        const locationDisplay = document.getElementById('locationDisplay');
-        if (!locationDisplay) return;
-        if (selectedLocation) {
-            locationDisplay.innerHTML = `
-                <p><strong>Lat:</strong> ${selectedLocation.lat.toFixed(5)}</p>
-                <p><strong>Lng:</strong> ${selectedLocation.lng.toFixed(5)}</p>
-            `;
-        } else {
-            locationDisplay.innerHTML = '<p class="text-muted">Sin ubicación seleccionada</p>';
+        try {
+            await setDoc(doc(db, "payments", paymentId), {
+                uid: currentUser.uid,
+                weekStart: weekStr,
+                paid: paid,
+                updatedAt: new Date().toISOString()
+            });
+            setPaymentStatusDisplay(paid);
+        } catch (e) {
+            console.error("Error setting payment status:", e);
         }
     }
 
-    function setPaymentStatus(paid, persist = true) {
+    function setPaymentStatusDisplay(paid) {
         const indicator = document.getElementById('paymentIndicator');
         const status = document.getElementById('paymentStatus');
-
         if (paid) {
             if (indicator) { indicator.className = 'payment-indicator paid'; indicator.textContent = '✅ Pagado'; }
             if (status) status.textContent = 'Pagado';
@@ -291,64 +261,40 @@ const AppCore = (() => {
             if (indicator) { indicator.className = 'payment-indicator unpaid'; indicator.textContent = '❌ No Pagado'; }
             if (status) status.textContent = 'No Pagado';
         }
-
-        if (persist && currentUser && currentWeekStart) {
-            const paidKey = STORAGE_KEY + 'paid_' + currentUser.email + '_' + currentWeekStart.toISOString().split('T')[0];
-            try {
-                localStorage.setItem(paidKey, paid ? '1' : '0');
-            } catch (e) { }
-        }
-    }
-
-    function getCurrentWeekStart() {
-        return new Date(currentWeekStart);
-    }
-
-    function getCurrentUser() {
-        return currentUser;
     }
 
     return {
         init,
-        saveDay,
-        deleteDay,
         addEntry,
         updateEntryById,
         deleteEntryById,
         previousWeek,
         nextWeek,
         goToDate,
-        getTimesheetData,
-        setLocation,
-        getLocation,
+        getTimesheetData: () => timesheetData,
+        setLocation: (loc) => { selectedLocation = loc; },
+        getLocation: () => selectedLocation,
         setPaymentStatus,
-        getCurrentWeekStart,
-        getCurrentUser,
+        getCurrentWeekStart: () => new Date(currentWeekStart),
+        getCurrentUser: () => currentUser,
         calculateHours,
         updateUI
     };
 })();
 
-function initializeApp(user) {
-    AppCore.init(user);
-}
+// Re-importing getDoc which was missing in imports
+import { getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-function prevWeek() {
-    AppCore.previousWeek();
-}
-
-function nextWeek() {
-    AppCore.nextWeek();
-}
-
-function goToWeek() {
-    const dateInput = document.getElementById('weekDate').value;
-    if (dateInput) {
-        AppCore.goToDate(new Date(dateInput));
-    }
-}
-
-function updatePaymentStatus() {
-    const toggle = document.getElementById('weekPaidToggle').checked;
+// Global exposure
+window.AppCore = AppCore;
+window.initializeApp = (user) => AppCore.init(user);
+window.prevWeek = () => AppCore.previousWeek();
+window.nextWeek = () => AppCore.nextWeek();
+window.goToWeek = () => {
+    const dateInput = document.getElementById('weekDate')?.value;
+    if (dateInput) AppCore.goToDate(new Date(dateInput));
+};
+window.updatePaymentStatus = () => {
+    const toggle = document.getElementById('weekPaidToggle')?.checked;
     AppCore.setPaymentStatus(toggle);
-}
+};

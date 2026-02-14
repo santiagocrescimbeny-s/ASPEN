@@ -18,5 +18,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/yourusername/orchard-timesheet-pro.git"
+  },
+  "dependencies": {
+    "firebase": "^12.9.0"
   }
 }
