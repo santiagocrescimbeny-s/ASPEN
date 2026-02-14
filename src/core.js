@@ -296,6 +296,7 @@ const AppCore = (() => {
         nextWeek,
         goToDate,
         getTimesheetData: () => timesheetData,
+        getWeekKey,
         setLocation: (loc) => { selectedLocation = loc; },
         getLocation: () => selectedLocation,
         setPaymentStatus,

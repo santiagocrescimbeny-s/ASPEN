@@ -11,9 +11,18 @@ function renderTimesheet() {
     const tbody = document.getElementById('timesheetBody');
     if (!tbody) return;
     const data = window.AppCore.getTimesheetData();
+    const currentWeekStart = window.AppCore.getCurrentWeekStart();
+    const weekStartKey = window.AppCore.getWeekKey(currentWeekStart);
+
     tbody.innerHTML = '';
 
-    const grouped = data.reduce((acc, entry) => {
+    // Filter data localy as a safety measure
+    const filteredData = data.filter(entry => {
+        const entryDate = new Date(entry.date + 'T00:00:00');
+        return window.AppCore.getWeekKey(entryDate) === weekStartKey;
+    });
+
+    const grouped = filteredData.reduce((acc, entry) => {
         const key = entry.date || 'unknown';
         if (!acc[key]) acc[key] = [];
         acc[key].push(entry);
