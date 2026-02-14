@@ -76,7 +76,8 @@ const I18n = (() => {
             pdfFooter2: 'Este reporte es válido sin firma digital.',
 
             months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-            shortMonths: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+            shortMonths: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+            days: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
         },
         en: {
             appName: 'Orchard Time',
@@ -152,7 +153,8 @@ const I18n = (() => {
             pdfFooter2: 'This report is valid without digital signature.',
 
             months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-            shortMonths: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            shortMonths: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dic'],
+            days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
         }
     };
 
@@ -224,7 +226,9 @@ const I18n = (() => {
         }
     }
 
-    return { getLang, setLang, applyLang, t, dict };
+    const instance = { getLang, setLang, applyLang, t, dict };
+    window.I18n = instance;
+    return instance;
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
