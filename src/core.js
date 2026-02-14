@@ -1,14 +1,9 @@
-/* ============================================
-   CORE APPLICATION MODULE
-   ============================================ */
-
 const AppCore = (() => {
     let currentUser = null;
     let currentWeekStart = null;
     let selectedLocation = null;
     let timesheetData = [];
 
-    // Configuration
     const WORK_TYPES = [
         'Tutoring', 'Riego', 'Cosecha', 'Podas',
         'Mantenimiento', 'Fertilización', 'Inspección', 'Empaque'
@@ -17,7 +12,6 @@ const AppCore = (() => {
     const STORAGE_KEY = 'agritime_timesheet_';
     const DAYS_OF_WEEK = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-    // Initialize app
     function init(user) {
         currentUser = user;
         currentWeekStart = getMonday(new Date());
@@ -25,21 +19,18 @@ const AppCore = (() => {
         updateUI();
     }
 
-    // Get Monday of current week
     function getMonday(date) {
         const d = new Date(date);
-        d.setHours(0, 0, 0, 0); // Normalize to local midnight to avoid UTC date shift
+        d.setHours(0, 0, 0, 0);
         const day = d.getDay();
         const diff = d.getDate() - day + (day === 0 ? -6 : 1);
         return new Date(d.setDate(diff));
     }
 
-    // Format date to localStorage key
     function getWeekKey() {
         return STORAGE_KEY + currentUser.email + '_' + currentWeekStart.toISOString().split('T')[0];
     }
 
-    // Load timesheet data from storage
     function loadTimesheetData() {
         const stored = localStorage.getItem(getWeekKey());
         if (stored) {
@@ -49,26 +40,21 @@ const AppCore = (() => {
         }
     }
 
-    // Initialize empty week data
     function initializeWeekData() {
-        // Start with empty entries for the week; entries will be added per-day as needed
         timesheetData = [];
         saveTimesheetData();
     }
 
-    // Save timesheet data
     function saveTimesheetData() {
         localStorage.setItem(getWeekKey(), JSON.stringify(timesheetData));
     }
 
-    // Update UI
     function updateUI() {
         updateHeader();
         updateSidebar();
         renderTimesheet();
     }
 
-    // Update header
     function updateHeader() {
         const lang = (typeof I18n !== 'undefined' && I18n.getLang) ? I18n.getLang() : 'es';
         const monthNamesEs = ['Enero', 'Feb', 'Mar', 'Abr', 'Mayo', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -87,17 +73,14 @@ const AppCore = (() => {
         const weekDateEl = document.getElementById('weekDate'); if (weekDateEl) weekDateEl.valueAsDate = new Date(startDate);
         const weekRangeEl = document.getElementById('weekRange'); if (weekRangeEl) weekRangeEl.textContent = weekText;
 
-        // Update user name
         const userNameEl = document.getElementById('userName'); if (userNameEl) userNameEl.textContent = `${currentUser.firstName} ${currentUser.lastName}`;
 
-        // Load persisted payment status for this week
         const paidKey = STORAGE_KEY + 'paid_' + currentUser.email + '_' + startDate.toISOString().split('T')[0];
         const paid = localStorage.getItem(paidKey) === '1';
         const weekToggle = document.getElementById('weekPaidToggle'); if (weekToggle) weekToggle.checked = paid;
         setPaymentStatus(paid, false);
     }
 
-    // Update sidebar
     function updateSidebar() {
         document.getElementById('sidebarUserName').textContent =
             `${currentUser.firstName} ${currentUser.lastName}`;
@@ -107,10 +90,8 @@ const AppCore = (() => {
         updateStatistics();
     }
 
-    // Update statistics
     function updateStatistics() {
         let totalHours = 0;
-        // daysWorked should be count of unique dates with worked hours
         const datesWithHours = new Set();
         timesheetData.forEach(entry => {
             if (entry.hours > 0) {
@@ -126,7 +107,6 @@ const AppCore = (() => {
         document.getElementById('avgHours').textContent = avgHours;
     }
 
-    // Format date as YYYY-MM-DD
     function formatDate(date) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -134,9 +114,7 @@ const AppCore = (() => {
         return `${year}-${month}-${day}`;
     }
 
-    // Calculate hours between start and end time
     function calculateHours(startTime, endTime, amBreak, pmBreak) {
-        // startTime and endTime expected in 24h 'HH:MM' format
         if (!startTime || !endTime) return 0;
 
         const [startHour, startMin] = startTime.split(':').map(Number);
@@ -145,12 +123,10 @@ const AppCore = (() => {
         const startTotalMin = startHour * 60 + startMin;
         let endTotalMin = endHour * 60 + endMin;
 
-        // If end is before start, assume next day
         if (endTotalMin < startTotalMin) endTotalMin += 24 * 60;
 
         let diffMinutes = endTotalMin - startTotalMin;
 
-        // Deduct only AM break (30 min) when checked
         let breakMinutes = 0;
         if (amBreak) breakMinutes += 30;
 
@@ -160,7 +136,6 @@ const AppCore = (() => {
         return Math.max(0, parseFloat(hours.toFixed(2)));
     }
 
-    // Add a new entry (allows multiple entries per day)
     function addEntry(entry) {
         const newEntry = {
             id: Date.now() + Math.floor(Math.random() * 1000),
@@ -176,29 +151,24 @@ const AppCore = (() => {
             notes: entry.notes || '',
             hours: entry.hours || 0
         };
-        // If the entry date belongs to a different week than current, save it under that week's key
         const entryWeekStart = getMonday(new Date(newEntry.date + 'T00:00:00'));
         const entryWeekKey = STORAGE_KEY + currentUser.email + '_' + entryWeekStart.toISOString().split('T')[0];
         const currentWeekKey = getWeekKey();
 
         if (entryWeekKey !== currentWeekKey) {
-            // load target week data, append and save
             const stored = localStorage.getItem(entryWeekKey);
             const arr = stored ? JSON.parse(stored) : [];
             arr.push(newEntry);
             localStorage.setItem(entryWeekKey, JSON.stringify(arr));
-            // do not change current in-memory week view
             return newEntry.id;
         }
 
-        // otherwise add to current week's in-memory data
         timesheetData.push(newEntry);
         saveTimesheetData();
         updateUI();
         return newEntry.id;
     }
 
-    // Update existing entry by id
     function updateEntryById(id, data) {
         const idx = timesheetData.findIndex(e => e.id === id);
         if (idx === -1) return false;
@@ -213,7 +183,6 @@ const AppCore = (() => {
         return true;
     }
 
-    // Delete entry by id
     function deleteEntryById(id) {
         const idx = timesheetData.findIndex(e => e.id === id);
         if (idx === -1) return false;
@@ -223,7 +192,6 @@ const AppCore = (() => {
         return true;
     }
 
-    // Add/Update timesheet entry
     function saveDay(dayIndex, data) {
         if (dayIndex >= 0 && dayIndex < timesheetData.length) {
             const hours = calculateHours(
@@ -246,7 +214,6 @@ const AppCore = (() => {
         return false;
     }
 
-    // Delete timesheet entry
     function deleteDay(dayIndex) {
         if (dayIndex >= 0 && dayIndex < timesheetData.length) {
             timesheetData[dayIndex] = {
@@ -267,7 +234,6 @@ const AppCore = (() => {
         return false;
     }
 
-    // Navigate weeks
     function previousWeek() {
         currentWeekStart = new Date(currentWeekStart);
         currentWeekStart.setDate(currentWeekStart.getDate() - 7);
@@ -288,26 +254,22 @@ const AppCore = (() => {
         updateUI();
     }
 
-    // Get timesheet data
     function getTimesheetData() {
         return timesheetData;
     }
 
-    // Set location
     function setLocation(location) {
         selectedLocation = location;
         updateLocationDisplay();
     }
 
-    // Get location
     function getLocation() {
         return selectedLocation;
     }
 
-    // Update location display
     function updateLocationDisplay() {
         const locationDisplay = document.getElementById('locationDisplay');
-        if (!locationDisplay) return; // sidebar location removed — noop if missing
+        if (!locationDisplay) return;
         if (selectedLocation) {
             locationDisplay.innerHTML = `
                 <p><strong>Lat:</strong> ${selectedLocation.lat.toFixed(5)}</p>
@@ -318,7 +280,6 @@ const AppCore = (() => {
         }
     }
 
-    // Set payment status
     function setPaymentStatus(paid, persist = true) {
         const indicator = document.getElementById('paymentIndicator');
         const status = document.getElementById('paymentStatus');
@@ -339,12 +300,10 @@ const AppCore = (() => {
         }
     }
 
-    // Get current week data
     function getCurrentWeekStart() {
         return new Date(currentWeekStart);
     }
 
-    // Get current user
     function getCurrentUser() {
         return currentUser;
     }
@@ -370,7 +329,6 @@ const AppCore = (() => {
     };
 })();
 
-// Public functions for HTML
 function initializeApp(user) {
     AppCore.init(user);
 }
@@ -393,30 +351,4 @@ function goToWeek() {
 function updatePaymentStatus() {
     const toggle = document.getElementById('weekPaidToggle').checked;
     AppCore.setPaymentStatus(toggle);
-}
-
-function loadSampleTimesheetData() {
-    const data = AppCore.getTimesheetData();
-
-    // Sample data for demonstration
-    const sampleData = [
-        { workType: 'Tutoring', startTime: '08:00', endTime: '12:30', amBreak: true, notes: '✅ Completado' },
-        { workType: 'Riego', startTime: '08:00', endTime: '17:00', amBreak: true, pmBreak: true, notes: '✅ Completado' },
-        { workType: 'Cosecha', startTime: '07:00', endTime: '15:00', amBreak: true, notes: '✅ Completado' },
-        { workType: 'Podas', startTime: '08:00', endTime: '12:00', notes: '⚠️ Día parcial' },
-        { workType: 'Mantenimiento', startTime: '09:00', endTime: '17:30', amBreak: true, pmBreak: true, notes: '✅ Completado' },
-        { workType: '', startTime: '', endTime: '', notes: '🆓 Día libre' },
-        { workType: 'Inspección', startTime: '08:00', endTime: '13:00', amBreak: true, notes: '✅ Completado' }
-    ];
-
-    sampleData.forEach((sample, index) => {
-        AppCore.saveDay(index, {
-            orchard: 'Rio Orchard',
-            ...sample,
-            amBreak: sample.amBreak || false,
-            pmBreak: sample.pmBreak || false
-        });
-    });
-
-    AppCore.updateUI();
 }

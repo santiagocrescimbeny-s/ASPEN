@@ -1,7 +1,3 @@
-/* ============================================
-   TIMESHEET RENDERING & MANAGEMENT
-   ============================================ */
-
 let editingEntryId = null;
 
 function renderTimesheet() {
@@ -9,7 +5,6 @@ function renderTimesheet() {
     const data = AppCore.getTimesheetData();
     tbody.innerHTML = '';
 
-    // Group entries by date so multiple entries on same day appear in a single row
     const grouped = data.reduce((acc, entry) => {
         const key = entry.date || 'unknown';
         if (!acc[key]) acc[key] = [];
@@ -17,10 +12,8 @@ function renderTimesheet() {
         return acc;
     }, {});
 
-    // iterate dates in chronological order
     Object.keys(grouped).sort().forEach(dateKey => {
         const entries = grouped[dateKey];
-        // combine fields
         const day = entries[0].day || '-';
         const orchards = entries.map(e => e.orchard || '-').filter(Boolean).join('<br>');
         const workTypes = entries.map(e => e.workType || '-').filter(Boolean).join('<br>');
@@ -90,13 +83,8 @@ function formatDateForDisplay(dateStr) {
     return `${day}/${month}/${year}`;
 }
 
-/* ============================================
-   MODAL MANAGEMENT
-   ============================================ */
-
 function openEditModalForNew() {
     editingEntryId = null;
-    // Clear fields
     const today = new Date();
     const elDate = document.getElementById('editDate'); if (elDate) {
         elDate.value = today.toISOString().split('T')[0];
@@ -129,7 +117,7 @@ function openEditModal(id) {
     const elDay = document.getElementById('editDay'); if (elDay) elDay.value = entry.day || '';
     const elOrch = document.getElementById('editOrchard'); if (elOrch) elOrch.value = entry.orchard || '';
     const workEl = document.getElementById('editWorkType'); if (workEl) workEl.value = entry.workType || '';
-    // populate location display if available
+
     const locDisplay = document.getElementById('editLocationDisplay');
     if (entry.location && entry.location.address) {
         if (locDisplay) locDisplay.textContent = entry.location.address;
@@ -164,7 +152,6 @@ function closeEditModal() {
 }
 
 function convert12hTo24(hourStr, minStr, ampm) {
-    // hourStr can be 'HH' or 'HH:MM' or a number string
     if (!hourStr) return '';
     let h = 0;
     let m = 0;
@@ -279,16 +266,13 @@ function saveEditedDay() {
             hours
         });
         if (newId) {
-            // If date is not in current view, switch to it so user sees the new entry
             const currentWeekStart = AppCore.getCurrentWeekStart();
             const entryDate = new Date(date + 'T00:00:00');
             const entryWeekStart = new Date(entryDate);
             const day = entryWeekStart.getDay();
             const diff = entryWeekStart.getDate() - day + (day === 0 ? -6 : 1);
-            entryWeekStart.setDate(diff); // Set to Monday of entry week
+            entryWeekStart.setDate(diff);
 
-            // Compare week starts (using time value to ignore object identity)
-            // Normalize time to midnight to be safe
             currentWeekStart.setHours(0, 0, 0, 0);
             entryWeekStart.setHours(0, 0, 0, 0);
 
@@ -315,7 +299,6 @@ function deleteEntry(id) {
     }
 }
 
-// Show edit alert
 function showEditAlert(message, type) {
     let alertBox = document.getElementById('editAlert');
 
@@ -335,19 +318,13 @@ function showEditAlert(message, type) {
     }, 3000);
 }
 
-/* ============================================
-   EXPORT FUNCTIONS (UI)
-   ============================================ */
-
 function exportToPDF() {
     const user = AppCore.getCurrentUser();
     const data = AppCore.getTimesheetData();
     const weekStart = AppCore.getCurrentWeekStart();
 
-    // Build HTML content for PDF
     const htmlContent = buildPDFContent(user, data, weekStart);
 
-    // PDF options
     const options = {
         margin: 10,
         filename: `Timesheet_${user.firstName}_${user.lastName}_${weekStart.toISOString().split('T')[0]}.pdf`,
@@ -356,11 +333,9 @@ function exportToPDF() {
         jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' }
     };
 
-    // Generate PDF
     html2pdf().set(options).from(htmlContent).save();
 }
 
-// Build PDF content
 function buildPDFContent(user, data, weekStart) {
     const monthNames = ['Enero', 'Feb', 'Mar', 'Abr', 'Mayo', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const endDate = new Date(weekStart);
@@ -408,16 +383,15 @@ function buildPDFContent(user, data, weekStart) {
                 .small-muted { font-size:10px; color:#666; }
             </style>
             <div class="pdf-header">
-                <h1 style="margin:0; font-size:20px;">AgriTime Pro</h1>
+                <h1 style="margin:0; font-size:20px;">Orchard Time</h1>
                 <p class="small-muted" style="margin:6px 0 0 0;">Reporte de Jornadas Laborales</p>
             </div>
-            <!-- Header -->
+            
             <div style="background: linear-gradient(135deg, #1a365d 0%, #2c5aa0 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                <h1 style="margin: 0 0 10px 0; font-size: 28px;">🌾 AgriTime Pro</h1>
+                <h1 style="margin: 0 0 10px 0; font-size: 28px;">🥝 Orchard Time</h1>
                 <p style="margin: 0; font-size: 14px;">Reporte de Jornadas Laborales</p>
             </div>
 
-            <!-- User Info -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
                 <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #0066cc;">
                     <p style="margin: 0 0 8px 0; font-weight: bold; color: #1a365d;">Información del Trabajador</p>
@@ -433,7 +407,6 @@ function buildPDFContent(user, data, weekStart) {
                 </div>
             </div>
 
-            <!-- Timesheet Table -->
             <div style="margin-bottom: 20px;">
                 <h3 style="color: #1a365d; border-bottom: 2px solid #0066cc; padding-bottom: 10px; margin-bottom: 15px;">Detalle de Jornadas</h3>
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
@@ -455,7 +428,6 @@ function buildPDFContent(user, data, weekStart) {
                 </table>
             </div>
 
-            <!-- Summary -->
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
                 <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #0066cc; text-align: center;">
                     <p style="margin: 0 0 8px 0; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">Horas Totales</p>
@@ -471,9 +443,8 @@ function buildPDFContent(user, data, weekStart) {
                 </div>
             </div>
 
-            <!-- Footer -->
             <div style="border-top: 2px solid #ddd; padding-top: 15px; text-align: center; font-size: 12px; color: #999;">
-                <p style="margin: 0;">Generado por AgriTime Pro - ${new Date().toLocaleDateString('es-AR')}</p>
+                <p style="margin: 0;">Generado por Orchard Time - ${new Date().toLocaleDateString('es-AR')}</p>
                 <p style="margin: 5px 0 0 0;">Este documento fue generado automáticamente y es válido sin firma.</p>
             </div>
         </div>
@@ -482,11 +453,6 @@ function buildPDFContent(user, data, weekStart) {
     return content;
 }
 
-/* ============================================
-   MODAL CONTROL
-   ============================================ */
-
-// Open map modal
 function openMapModal() {
     document.getElementById('mapModal').classList.add('show');
     setTimeout(() => {
@@ -494,12 +460,10 @@ function openMapModal() {
     }, 100);
 }
 
-// Close map modal
 function closeMapModal() {
     document.getElementById('mapModal').classList.remove('show');
 }
 
-// Confirm location
 function confirmLocation() {
     const lat = parseFloat(document.getElementById('mapLat').value);
     const lng = parseFloat(document.getElementById('mapLng').value);
@@ -508,7 +472,6 @@ function confirmLocation() {
 
     if (lat && lng) {
         AppCore.setLocation({ lat, lng, address });
-        // update edit modal display if open
         const locDisplay = document.getElementById('editLocationDisplay'); if (locDisplay) locDisplay.textContent = address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
         closeMapModal();
     } else {
@@ -516,7 +479,6 @@ function confirmLocation() {
     }
 }
 
-// Close modals on Escape key
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeEditModal();
@@ -524,7 +486,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Close modals on background click
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal')) {
         if (e.target.id === 'editModal') closeEditModal();
@@ -532,7 +493,6 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Auto-set day-of-week when date changes in edit modal
 function autoSetDayOfWeek() {
     const dateVal = document.getElementById('editDate').value;
     if (!dateVal) return;
@@ -545,7 +505,6 @@ function autoSetDayOfWeek() {
     }
 }
 
-// Wire small UI events
 document.addEventListener('DOMContentLoaded', () => {
     const dateInput = document.getElementById('editDate');
     if (dateInput) dateInput.addEventListener('change', autoSetDayOfWeek);
@@ -553,7 +512,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const locBtn = document.getElementById('locationInfoBtn');
     if (locBtn) locBtn.addEventListener('click', openMapModal);
 
-    // Time input helpers and toggle wiring
     const startText = document.getElementById('editStartTimeText');
     const endText = document.getElementById('editEndTimeText');
     const startToggle = document.getElementById('editStartAmPmToggle');
@@ -563,7 +521,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (startText) startText.addEventListener('input', onStartTimeInput);
     if (endText) endText.addEventListener('input', onEndTimeInput);
-    // format on blur (user requested formatting after leaving input)
     if (startText) startText.addEventListener('blur', onStartTimeBlur);
     if (endText) endText.addEventListener('blur', onEndTimeBlur);
     if (startToggle) startToggle.addEventListener('change', () => {
@@ -579,30 +536,27 @@ document.addEventListener('DOMContentLoaded', () => {
 function normalizeTimeInput(val) {
     if (!val) return '';
     const t = val.trim();
-    // Accept digits only patterns: 1..4 digits
     if (/^\d{1,4}$/.test(t)) {
-        if (t.length <= 2) { // hours only
+        if (t.length <= 2) {
             return String(parseInt(t, 10)) + ':00';
         }
-        if (t.length === 3) { // HMM -> H:MM
+        if (t.length === 3) {
             const h = String(parseInt(t.slice(0, 1), 10));
             const mm = String(parseInt(t.slice(1), 10)).padStart(2, '0');
             return h + ':' + mm;
         }
-        if (t.length === 4) { // HHMM -> HH:MM
+        if (t.length === 4) {
             const h = String(parseInt(t.slice(0, 2), 10));
             const mm = String(parseInt(t.slice(2), 10)).padStart(2, '0');
             return h + ':' + mm;
         }
     }
-    // If H:MM or HH:MM ensure padding and convert 24h->12h if needed
     const m = t.match(/^(\d{1,2}):(\d{1,2})$/);
     if (m) {
         let hh = parseInt(m[1], 10);
         const mm = String(parseInt(m[2], 10)).padStart(2, '0');
-        // Convert 24h style to 12h display (user-facing)
         if (hh === 0) {
-            hh = 12; // 00 -> 12 AM
+            hh = 12;
         } else if (hh > 12) {
             hh = hh - 12;
         }
@@ -629,7 +583,6 @@ function onStartTimeBlur() {
     const original = el.value && el.value.trim();
     const formatted = normalizeTimeInput(original);
     if (formatted) el.value = formatted;
-    // If user typed 24h format (e.g., 17:00) detect and set AM/PM toggle
     const std = (original || '').match(/^(\d{1,2}):(\d{2})$/);
     if (std) {
         const origH = parseInt(std[1], 10);

@@ -1,15 +1,12 @@
-// Configuración de la aplicación
 const CONFIG = {
     APP_NAME: 'Orchard Timesheet Pro',
     VERSION: '1.0.0',
     STORAGE_KEY: 'timesheetData',
     LOCATION_KEY: 'orchardLocation',
-    
-    // Configuración de horas
+
     AM_BREAK_MINUTES: 30,
     PM_BREAK_MINUTES: 30,
-    
-    // Colores
+
     COLORS: {
         PRIMARY: '#2d5016',
         PRIMARY_LIGHT: '#4a7c2c',
@@ -19,15 +16,13 @@ const CONFIG = {
         DANGER: '#ef4444',
         WARNING: '#f59e0b'
     },
-    
-    // Ubicación por defecto (California Orchards)
+
     DEFAULT_LOCATION: {
         lat: 37.3382,
         lng: -121.8863,
         address: 'Región de Huertos, California'
     },
-    
-    // Tipos de trabajo recomendados
+
     WORK_TYPES: [
         'Tutoring',
         'Riego',
@@ -38,8 +33,7 @@ const CONFIG = {
         'Inspección',
         'Empaque'
     ],
-    
-    // Emojis disponibles para notas
+
     STATUS_EMOJIS: {
         OK: '✓',
         RAIN: '🌧️',
@@ -49,34 +43,30 @@ const CONFIG = {
         SICK: '🤒',
         HOLIDAY: '🎉'
     },
-    
-    // Formato de fecha
+
     DATE_FORMAT: 'es-ES',
     TIME_FORMAT: '24h'
 };
 
-// Utilidades
 const Utils = {
-    // Debounce para ahorro de recursos
-    debounce: function(func, delay) {
+    debounce: function (func, delay) {
         let timeoutId;
-        return function(...args) {
+        return function (...args) {
             clearTimeout(timeoutId);
             timeoutId = setTimeout(() => func.apply(this, args), delay);
         };
     },
-    
-    // Throttle para control de lluvia de eventos
-    throttle: function(func, limit) {
+
+    throttle: function (func, limit) {
         let lastFunc;
         let lastRan;
-        return function(...args) {
+        return function (...args) {
             if (!lastRan) {
                 func.apply(this, args);
                 lastRan = Date.now();
             } else {
                 clearTimeout(lastFunc);
-                lastFunc = setTimeout(function() {
+                lastFunc = setTimeout(function () {
                     if ((Date.now() - lastRan) >= limit) {
                         func.apply(this, args);
                         lastRan = Date.now();
@@ -85,9 +75,8 @@ const Utils = {
             }
         };
     },
-    
-    // Notificación visual
-    showNotification: function(message, type = 'success') {
+
+    showNotification: function (message, type = 'success') {
         const notification = document.createElement('div');
         notification.style.cssText = `
             position: fixed;
@@ -103,7 +92,7 @@ const Utils = {
         `;
         notification.textContent = message;
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => notification.remove(), 300);

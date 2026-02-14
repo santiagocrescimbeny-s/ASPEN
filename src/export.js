@@ -1,14 +1,8 @@
-/* ============================================
-   PDF EXPORT UTILITIES
-   ============================================ */
-
 const ExportManager = (() => {
-    // Format data for export
     function prepareExportData(user, timesheetData, weekStart) {
         const lang = I18n.getLang();
         const d = I18n.dict[lang];
 
-        // Use months from dictionary or fallback
         const monthNames = d.months || ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
         const weekEnd = new Date(weekStart);
@@ -64,7 +58,6 @@ const ExportManager = (() => {
         };
     }
 
-    // Format date to full display format
     function formatDateFull(dateStr) {
         const lang = I18n.getLang();
         const d = I18n.dict[lang];
@@ -74,14 +67,11 @@ const ExportManager = (() => {
         return `${String(date.getDate()).padStart(2, '0')} ${monthNames[date.getMonth()]}`;
     }
 
-    // Generate professional PDF
     function generatePDF(user, timesheetData, weekStart) {
         const exportData = prepareExportData(user, timesheetData, weekStart);
 
-        // Create document element
         const docElement = createPDFDocument(exportData);
 
-        // PDF options
         const options = {
             margin: 10,
             filename: `Timesheet_${user.firstName.replace(/\s+/g, '_')}_${user.lastName.replace(/\s+/g, '_')}_${weekStart.toISOString().split('T')[0]}.pdf`,
@@ -90,11 +80,9 @@ const ExportManager = (() => {
             jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' }
         };
 
-        // Generate PDF
         html2pdf().set(options).from(docElement).save();
     }
 
-    // Create PDF document HTML
     function createPDFDocument(data) {
         const { user, week, summary, data: timesheetRows } = data;
         const lang = I18n.getLang();
@@ -226,7 +214,6 @@ const ExportManager = (() => {
     };
 })();
 
-// Override exportToPDF function to use ExportManager
 function exportToPDF() {
     const user = AppCore.getCurrentUser();
     const data = AppCore.getTimesheetData();

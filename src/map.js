@@ -1,51 +1,39 @@
-/* ============================================
-   MAP MANAGEMENT WITH LEAFLET
-   ============================================ */
-
 let mapInstance = null;
 let mapMarker = null;
 let geocoderControl = null;
 
-// Initialize map
 function initializeMap() {
-    // Wait for map container to be visible
     const mapContainer = document.getElementById('map');
     if (!mapContainer) return;
 
-    // Remove existing map if it exists
     if (mapInstance) {
         mapInstance.remove();
         mapInstance = null;
     }
 
-    // Default center: New Zealand (Auckland)
     const defaultLat = -36.8485;
     const defaultLng = 174.7633;
     const defaultZoom = 12;
 
-    // Create map
     mapInstance = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
 
-    // Add tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 19
     }).addTo(mapInstance);
 
-    // Add geocoder control (search by street, number, place)
     if (L.Control && L.Control.geocoder) {
         geocoderControl = L.Control.geocoder({
             defaultMarkGeocode: false,
             placeholder: 'Buscar calle, número, lugar...'
         })
-        .on('markgeocode', function(e) {
-            const latlng = e.geocode.center;
-            addMarker(latlng.lat, latlng.lng, e.geocode && e.geocode.name ? e.geocode.name : '');
-        })
-        .addTo(mapInstance);
+            .on('markgeocode', function (e) {
+                const latlng = e.geocode.center;
+                addMarker(latlng.lat, latlng.lng, e.geocode && e.geocode.name ? e.geocode.name : '');
+            })
+            .addTo(mapInstance);
     }
 
-    // Initialize with current location if exists
     const currentLocation = AppCore.getLocation();
     if (currentLocation) {
         addMarker(currentLocation.lat, currentLocation.lng, currentLocation.address || '');
@@ -53,25 +41,20 @@ function initializeMap() {
         addMarker(defaultLat, defaultLng);
     }
 
-    // Map click handler
     mapInstance.on('click', (e) => {
         addMarker(e.latlng.lat, e.latlng.lng);
     });
 
-    // Fix Leaflet map sizing issue
     setTimeout(() => {
         mapInstance.invalidateSize();
     }, 100);
 }
 
-// Add marker to map
 function addMarker(lat, lng, addr) {
-    // Remove existing marker
     if (mapMarker) {
         mapInstance.removeLayer(mapMarker);
     }
 
-    // Create new marker with custom icon
     mapMarker = L.circleMarker([lat, lng], {
         radius: 10,
         fillColor: '#0066cc',
@@ -81,7 +64,6 @@ function addMarker(lat, lng, addr) {
         fillOpacity: 0.8
     }).addTo(mapInstance);
 
-    // Add popup
     mapMarker.bindPopup(`
         <div style="text-align: center; font-family: Arial; font-size: 12px;">
             <strong>Ubicación Seleccionada</strong><br>
@@ -90,10 +72,8 @@ function addMarker(lat, lng, addr) {
         </div>
     `).openPopup();
 
-    // Center map on marker
     mapInstance.setView([lat, lng], 13);
 
-    // Update input fields
     document.getElementById('mapLat').value = lat.toFixed(5);
     document.getElementById('mapLng').value = lng.toFixed(5);
     const addrEl = document.getElementById('mapAddress');
@@ -129,10 +109,9 @@ function addMarker(lat, lng, addr) {
                     </div>
                 `).openPopup();
             }
-        }).catch(() => {});
+        }).catch(() => { });
 }
 
-// Allow manual input of coordinates
 document.addEventListener('DOMContentLoaded', () => {
     const latInput = document.getElementById('mapLat');
     const lngInput = document.getElementById('mapLng');
@@ -155,15 +134,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Wire up search input/button inside modal
     const searchBtn = document.getElementById('mapSearchBtn');
     const searchInput = document.getElementById('mapSearchInput');
-    // Attach the handler when the elements exist (do not depend on optional geocoder control)
     if (searchBtn && searchInput) {
         searchBtn.addEventListener('click', () => {
             const q = searchInput.value && searchInput.value.trim();
             if (!q) return;
-            // Use Nominatim search directly for reliability
             const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=5`;
             fetch(url)
                 .then(r => r.json())

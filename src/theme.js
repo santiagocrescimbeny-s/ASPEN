@@ -7,13 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (toggle) {
-        // restore
         const saved = localStorage.getItem('darkMode');
         if (saved === '1') { toggle.checked = true; }
         apply();
         toggle.addEventListener('change', apply);
     } else {
-        // apply saved even if toggle not present
         const saved = localStorage.getItem('darkMode');
         if (saved === '1') document.body.classList.add('dark-mode');
     }

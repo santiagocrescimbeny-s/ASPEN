@@ -3,16 +3,13 @@ const I18n = (() => {
 
     const dict = {
         es: {
-            // General
             appName: 'Orchard Time',
             appSubtitle: 'Gestión de Jornadas Laborales',
 
-            // Auth
             loginTitle: 'Iniciar Sesión',
             email: 'Email',
             password: 'Contraseña',
             loginBtn: 'Ingresar',
-            demoMode: 'Modo Demo',
             noAccount: '¿No tienes cuenta?',
             registerHere: 'Regístrate aquí',
             createAccount: 'Crear Cuenta',
@@ -26,7 +23,6 @@ const I18n = (() => {
             hasAccount: '¿Ya tienes cuenta?',
             loginHere: 'Inicia Sesión',
 
-            // Sidebar
             myData: 'Mis Datos',
             name: 'Nombre:',
             weeklySummary: 'Resumen Semanal',
@@ -38,16 +34,13 @@ const I18n = (() => {
             paid: 'Pagado',
             logout: 'Salir',
 
-            // Navigation
             prevWeek: 'Semana Anterior',
             nextWeek: 'Próxima Semana',
             weekEnding: 'Semana que termina',
 
-            // Actions
             addEntry: 'Agregar Entrada',
             exportPdf: 'Exportar PDF',
 
-            // Table
             day: 'Día',
             date: 'Fecha',
             orchard: 'Huerto',
@@ -61,7 +54,6 @@ const I18n = (() => {
             notes: 'Notas',
             actions: 'Acciones',
 
-            // Modals
             mapTitle: 'Seleccionar Ubicación del Huerto',
             searchPlaceholder: 'Buscar dirección...',
             searchBtn: 'Buscar',
@@ -71,7 +63,6 @@ const I18n = (() => {
             save: 'Guardar',
             calculatedHours: 'Horas Calculadas:',
 
-            // PDF Export
             pdfTitle: 'Orchard Time',
             pdfSubtitle: 'Reporte Profesional de Jornadas Laborales',
             pdfPeriod: 'Período Reportado:',
@@ -84,21 +75,17 @@ const I18n = (() => {
             pdfFooter1: 'Documento generado automáticamente por Orchard Time',
             pdfFooter2: 'Este reporte es válido sin firma digital.',
 
-            // Weeks/Months
             months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
             shortMonths: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
         },
         en: {
-            // General
             appName: 'Orchard Time',
             appSubtitle: 'Workforce Management System',
 
-            // Auth
             loginTitle: 'Login',
             email: 'Email',
             password: 'Password',
             loginBtn: 'Login',
-            demoMode: 'Demo Mode',
             noAccount: "Don't have an account?",
             registerHere: 'Register here',
             createAccount: 'Create Account',
@@ -112,7 +99,6 @@ const I18n = (() => {
             hasAccount: 'Already have an account?',
             loginHere: 'Login here',
 
-            // Sidebar
             myData: 'My Details',
             name: 'Name:',
             weeklySummary: 'Weekly Summary',
@@ -124,16 +110,13 @@ const I18n = (() => {
             paid: 'Paid',
             logout: 'Logout',
 
-            // Navigation
             prevWeek: 'Previous Week',
             nextWeek: 'Next Week',
             weekEnding: 'Week ending',
 
-            // Actions
             addEntry: 'Add Entry',
             exportPdf: 'Export PDF',
 
-            // Table
             day: 'Day',
             date: 'Date',
             orchard: 'Orchard',
@@ -147,7 +130,6 @@ const I18n = (() => {
             notes: 'Notes',
             actions: 'Actions',
 
-            // Modals
             mapTitle: 'Select Orchard Location',
             searchPlaceholder: 'Search address...',
             searchBtn: 'Search',
@@ -157,7 +139,6 @@ const I18n = (() => {
             save: 'Save',
             calculatedHours: 'Calculated Hours:',
 
-            // PDF Export
             pdfTitle: 'Orchard Time',
             pdfSubtitle: 'Professional Work Timesheet Report',
             pdfPeriod: 'Reported Period:',
@@ -170,7 +151,6 @@ const I18n = (() => {
             pdfFooter1: 'Automatically generated document by Orchard Time',
             pdfFooter2: 'This report is valid without digital signature.',
 
-            // Weeks/Months
             months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
             shortMonths: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         }
@@ -185,18 +165,14 @@ const I18n = (() => {
 
     function applyLang() {
         const lang = getLang();
-
-        // 1. Setup specific manual translations updates
         const d = dict[lang];
 
-        // Auth
-        updateContent('auth-logo', '🥝'); // Just ensure logo is there
+        updateContent('auth-logo', '🥝');
         updateContent('loginForm', h => {
             const h2 = h.querySelector('h2'); if (h2) h2.textContent = d.loginTitle;
             const labels = h.querySelectorAll('label');
         });
 
-        // Loop through everything with data-i18n-key
         document.querySelectorAll('[data-i18n-key]').forEach(el => {
             const key = el.getAttribute('data-i18n-key');
             if (!key || !d[key]) return;
@@ -204,7 +180,6 @@ const I18n = (() => {
             if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
                 el.placeholder = d[key];
             } else {
-                // Check if it has an icon child to preserve
                 const icon = el.querySelector('i');
                 if (icon) {
                     el.childNodes.forEach(node => {
@@ -221,15 +196,11 @@ const I18n = (() => {
             }
         });
 
-        // Manual overrides for complex HTML structures if data-i18n-key is hard to apply directly
-        // Sidebar
         updateText('sidebarNameLabel', d.name);
 
-        // Buttons with icons (better handled via data-i18n-key on the text node if possible, or here)
         updateBtn('addEntryBtn', 'fa-plus', d.addEntry);
         updateBtn('exportPdfBtn', 'fa-download', d.exportPdf);
         updateBtn('mapSearchBtn', null, d.searchBtn);
-        // ... (auth buttons are handled by data-i18n-key in HTML)
     }
 
     function updateContent(id, content) {
@@ -253,11 +224,9 @@ const I18n = (() => {
         }
     }
 
-    // public
     return { getLang, setLang, applyLang, t, dict };
 })();
 
-// On load wire selector
 document.addEventListener('DOMContentLoaded', () => {
     const sel = document.getElementById('langSelect');
     if (sel) {

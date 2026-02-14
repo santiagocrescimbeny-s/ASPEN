@@ -19,7 +19,7 @@
 </head>
 
 <body>
-   
+
     <div id="authContainer" class="auth-container active">
         <div class="auth-box">
             <div class="auth-header">
@@ -48,19 +48,12 @@
                     </button>
                 </div>
 
-                <div class="demo-login" onclick="loadDemoData()" style="cursor:pointer;" title="Click para demo rápida">
-                    <p><strong data-i18n-key="demoMode">Modo Demo</strong> (Click aquí)</p>
-                    <p>Usuario: santiagocrescimbeny@gmail.com</p>
-                    <p>Clave: 123456</p>
-                </div>
-
                 <div class="form-footer">
                     <p><span data-i18n-key="noAccount">¿No tienes cuenta?</span> <a onclick="toggleAuthForms(event)"
                             data-i18n-key="registerHere">Regístrate aquí</a></p>
                 </div>
             </div>
 
-            <!-- REGISTER FORM -->
             <div id="registerForm" class="auth-form">
                 <h2 data-i18n-key="createAccount">Crear Cuenta</h2>
 
@@ -107,7 +100,6 @@
                     </div>
                 </div>
 
-                <!-- Hidden TaxCode as it was in original logic but not requested in UI -->
                 <input type="hidden" id="regTaxCode" value="">
 
                 <div class="form-group" style="margin-top: 20px;">
@@ -125,9 +117,7 @@
         </div>
     </div>
 
-    <!-- APLICACIÓN PRINCIPAL -->
     <div id="appContainer" class="app-container">
-        <!-- Header -->
         <header class="header">
             <div class="header-content">
                 <div class="header-brand">
@@ -155,12 +145,9 @@
             </div>
         </header>
 
-        <!-- Main Content -->
         <main class="main-content">
             <div class="container-fluid">
-                <!-- Sidebar -->
                 <aside class="sidebar">
-                    <!-- User Info Card -->
                     <div class="card user-card">
                         <div class="card-header">
                             <i class="fas fa-user-circle"></i> <span data-i18n-key="myData">Mis Datos</span>
@@ -181,7 +168,6 @@
                         </div>
                     </div>
 
-                    <!-- Estadísticas Card -->
                     <div class="card stats-card">
                         <div class="card-header">
                             <i class="fas fa-chart-bar"></i> <span data-i18n-key="weeklySummary">Resumen Semanal</span>
@@ -211,7 +197,6 @@
                         </div>
                     </div>
 
-                    <!-- Estado de Pago Card -->
                     <div class="card payment-card">
                         <div class="card-header">
                             <i class="fas fa-money-bill-wave"></i> <span data-i18n-key="paymentStatus">Estado de
@@ -232,9 +217,7 @@
                     </div>
                 </aside>
 
-                <!-- Contenido Principal -->
                 <section class="main-section">
-                    <!-- Controles de Navegación -->
                     <div class="controls-bar">
                         <button class="btn btn-secondary btn-interactive" onclick="prevWeek()">
                             <i class="fas fa-chevron-left"></i> <span data-i18n-key="prevWeek">Semana Anterior</span>
@@ -257,7 +240,6 @@
                         </button>
                     </div>
 
-                    <!-- Tabla Timesheet -->
                     <div class="timesheet-wrapper">
                         <table class="timesheet-table" id="timesheetTable">
                             <thead>
@@ -277,7 +259,6 @@
                                 </tr>
                             </thead>
                             <tbody id="timesheetBody">
-                                <!-- Se llena dinámicamente -->
                             </tbody>
                         </table>
                     </div>
@@ -286,7 +267,6 @@
         </main>
     </div>
 
-    <!-- Modal: Mapa -->
     <div id="mapModal" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
@@ -328,7 +308,6 @@
         </div>
     </div>
 
-    <!-- Modal: Editar Día -->
     <div id="editModal" class="modal">
         <div class="modal-content modal-edit">
             <div class="modal-header">
@@ -443,7 +422,6 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="src/config.js?v=2"></script>
     <script src="src/auth.js?v=2"></script>
     <script src="src/core.js?v=2"></script>
@@ -453,39 +431,7 @@
     <script src="src/theme.js?v=2"></script>
     <script src="src/export.js?v=2"></script>
     <script src="src/video.js?v=2"></script>
-    <script>
-        function toggleAuthDiagnostics() {
-            const panel = document.getElementById('authDiagPanel');
-            if (!panel) return;
-            if (panel.style.display === 'none' || panel.style.display === '') {
-                panel.style.display = 'block';
-                refreshAuthDiagnostics();
-            } else {
-                panel.style.display = 'none';
-            }
-        }
 
-        function refreshAuthDiagnostics() {
-            const content = document.getElementById('authDiagContent');
-            if (!content) return;
-            const logs = (AuthManager.getAuthLogs && AuthManager.getAuthLogs()) || [];
-            const users = (AuthManager.getAllUsers && AuthManager.getAllUsers()) || [];
-            const session = (AuthManager.getCurrentSession && AuthManager.getCurrentSession()) || null;
-
-            let html = '';
-            html += '--- Recent Logs ---\n';
-            if (logs.length === 0) html += '(no logs)\n';
-            else html += logs.join('\n') + '\n';
-            html += '\n--- Users (' + users.length + ') ---\n';
-            users.forEach(u => {
-                html += `${u.email}  (${u.firstName || ''} ${u.lastName || ''})\n`;
-            });
-            html += '\n--- Current Session ---\n';
-            html += session ? JSON.stringify(session, null, 2) : '(no session)';
-
-            content.textContent = html;
-        }
-    </script>
 </body>
 
 </html>
