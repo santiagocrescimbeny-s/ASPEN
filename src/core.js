@@ -136,14 +136,19 @@ const AppCore = (() => {
     function calculateHours(startTime, endTime, amBreak, pmBreak) {
         if (!startTime || !endTime) return 0;
         const [startHour, startMin] = startTime.split(':').map(Number);
-        const [endHour, endMin] = endTime.split(':').map(Number);
-        const startTotalMin = startHour * 60 + startMin;
+        let [endHour, endMin] = endTime.split(':').map(Number);
+
+        let startTotalMin = startHour * 60 + startMin;
         let endTotalMin = endHour * 60 + endMin;
+
+        // If end time is before start time, it likely crosses midnight
         if (endTotalMin < startTotalMin) endTotalMin += 24 * 60;
+
         let diffMinutes = endTotalMin - startTotalMin;
         let breakMinutes = 0;
         if (amBreak) breakMinutes += 30;
         if (pmBreak) breakMinutes += 30;
+
         const totalMinutes = diffMinutes - breakMinutes;
         return Math.max(0, parseFloat((totalMinutes / 60).toFixed(2)));
     }

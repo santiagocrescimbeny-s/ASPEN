@@ -155,9 +155,9 @@ function convert24To12(timeStr) {
 }
 
 function updateEditHours() {
-    const startText = normalizeTimeInput(document.getElementById('editStartTimeText')?.value);
+    const startText = normalizeTimeInput(document.getElementById('editStartTimeText')?.value, 'editStartAmPmToggle', 'editStartAmPmLabel');
     const startIsPm = document.getElementById('editStartAmPmToggle')?.checked;
-    const endText = normalizeTimeInput(document.getElementById('editEndTimeText')?.value);
+    const endText = normalizeTimeInput(document.getElementById('editEndTimeText')?.value, 'editEndAmPmToggle', 'editEndAmPmLabel');
     const endIsPm = document.getElementById('editEndAmPmToggle')?.checked;
     const amBreak = document.getElementById('editAMBreak')?.checked;
     const pmBreak = document.getElementById('editPMBreak')?.checked;
@@ -176,9 +176,9 @@ async function saveEditedDay() {
     const day = document.getElementById('editDay').value;
     const orchard = document.getElementById('editOrchard').value;
     const workType = document.getElementById('editWorkType')?.value || '';
-    const startText = normalizeTimeInput(document.getElementById('editStartTimeText').value);
+    const startText = normalizeTimeInput(document.getElementById('editStartTimeText').value, 'editStartAmPmToggle', 'editStartAmPmLabel');
     const startIsPm = document.getElementById('editStartAmPmToggle').checked;
-    const endText = normalizeTimeInput(document.getElementById('editEndTimeText').value);
+    const endText = normalizeTimeInput(document.getElementById('editEndTimeText').value, 'editEndAmPmToggle', 'editEndAmPmLabel');
     const endIsPm = document.getElementById('editEndAmPmToggle').checked;
     const startTime = convert12hTo24(startText, null, startIsPm ? 'PM' : 'AM');
     const endTime = convert12hTo24(endText, null, endIsPm ? 'PM' : 'AM');
@@ -355,19 +355,48 @@ function autoSetDayOfWeek() {
 }
 window.autoSetDayOfWeek = autoSetDayOfWeek;
 
-function normalizeTimeInput(val) {
+function normalizeTimeInput(val, toggleId, labelId) {
     if (!val) return '';
     const t = val.trim();
+    let hh, mm;
+
+    // Handle formats like 1500 or 900
     if (/^\d{1,4}$/.test(t)) {
-        if (t.length <= 2) return String(parseInt(t, 10)) + ':00';
-        if (t.length === 3) return t.slice(0, 1) + ':' + t.slice(1).padStart(2, '0');
-        if (t.length === 4) return t.slice(0, 2) + ':' + t.slice(2).padStart(2, '0');
+        if (t.length <= 2) {
+            hh = parseInt(t, 10);
+            mm = 0;
+        } else if (t.length === 3) {
+            hh = parseInt(t.slice(0, 1), 10);
+            mm = parseInt(t.slice(1), 10);
+        } else {
+            hh = parseInt(t.slice(0, 2), 10);
+            mm = parseInt(t.slice(2), 10);
+        }
+    } else {
+        const m = t.match(/^(\d{1,2}):(\d{1,2})$/);
+        if (m) {
+            hh = parseInt(m[1], 10);
+            mm = parseInt(m[2], 10);
+        }
     }
-    const m = t.match(/^(\d{1,2}):(\d{1,2})$/);
-    if (m) {
-        let hh = parseInt(m[1], 10); const mm = String(parseInt(m[2], 10)).padStart(2, '0');
-        if (hh === 0) hh = 12; else if (hh > 12) hh = hh - 12;
-        return String(hh) + ':' + mm;
+
+    if (hh !== undefined) {
+        if (toggleId && labelId) {
+            const toggle = document.getElementById(toggleId);
+            const label = document.getElementById(labelId);
+            if (hh >= 12) {
+                if (toggle) toggle.checked = true;
+                if (label) label.textContent = 'PM';
+                if (hh > 12) hh -= 12;
+            } else {
+                if (hh === 0) hh = 12;
+                if (toggle) toggle.checked = false;
+                if (label) label.textContent = 'AM';
+            }
+        } else {
+            if (hh === 0) hh = 12; else if (hh > 12) hh -= 12;
+        }
+        return String(hh) + ':' + String(mm).padStart(2, '0');
     }
     return t;
 }
@@ -379,7 +408,7 @@ window.onEndTimeInput = onEndTimeInput;
 
 function onStartTimeBlur() {
     const el = document.getElementById('editStartTimeText'); if (!el) return;
-    const formatted = normalizeTimeInput(el.value);
+    const formatted = normalizeTimeInput(el.value, 'editStartAmPmToggle', 'editStartAmPmLabel');
     if (formatted) el.value = formatted;
     updateEditHours();
 }
@@ -387,7 +416,7 @@ window.onStartTimeBlur = onStartTimeBlur;
 
 function onEndTimeBlur() {
     const el = document.getElementById('editEndTimeText'); if (!el) return;
-    const formatted = normalizeTimeInput(el.value);
+    const formatted = normalizeTimeInput(el.value, 'editEndAmPmToggle', 'editEndAmPmLabel');
     if (formatted) el.value = formatted;
     updateEditHours();
 }

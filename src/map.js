@@ -34,7 +34,7 @@ function initializeMap() {
             .addTo(mapInstance);
     }
 
-    const currentLocation = AppCore.getLocation();
+    const currentLocation = window.AppCore.getLocation();
     if (currentLocation) {
         addMarker(currentLocation.lat, currentLocation.lng, currentLocation.address || '');
     } else {
@@ -161,3 +161,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+window.initializeMap = initializeMap;
