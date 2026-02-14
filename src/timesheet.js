@@ -1,5 +1,12 @@
 let editingEntryId = null;
 
+function formatDecimalToHHMM(hours) {
+    if (isNaN(hours) || hours <= 0) return '0:00';
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}:${String(m).padStart(2, '0')}`;
+}
+
 function renderTimesheet() {
     const tbody = document.getElementById('timesheetBody');
     if (!tbody) return;
@@ -40,7 +47,7 @@ function renderTimesheet() {
             <td style="text-align:center">${amBreaks}</td>
             <td style="text-align:center">${pmBreaks}</td>
             <td>${ends}</td>
-            <td class="cell-hours">${totalHours > 0 ? totalHours.toFixed(2) + ' hrs' : '-'}</td>
+            <td class="cell-hours">${totalHours > 0 ? formatDecimalToHHMM(totalHours) + ' hs' : '-'}</td>
             <td class="cell-notes">${notes}</td>
             <td class="cell-actions">
                 <button class="action-btn edit" onclick="window.openEditModal('${entries[0].id}')" title="Editar"><i class="fas fa-edit"></i></button>
@@ -172,11 +179,11 @@ function updateEditHours() {
     const resEl = document.getElementById('editHoursResult');
     if (resEl) {
         if (isNaN(hours) || hours <= 0) {
-            resEl.textContent = '0.00 hrs';
+            resEl.textContent = '0:00 hs';
         } else {
             const h = Math.floor(hours);
             const m = Math.round((hours - h) * 60);
-            resEl.textContent = `${hours.toFixed(2)} hrs (${h}h ${m}m)`;
+            resEl.textContent = `${h}:${String(m).padStart(2, '0')} hs`;
         }
     }
 }
@@ -297,13 +304,14 @@ function buildPDFContent(user, data, weekStart) {
                 <td style="padding: 12px 8px; text-align: center;">${day.amBreak ? 'SI' : 'NO'}</td>
                 <td style="padding: 12px 8px; text-align: center;">${day.pmBreak ? 'SI' : 'NO'}</td>
                 <td style="padding: 12px 8px; text-align: center;">${day.endTime || '-'}</td>
-                <td style="padding: 12px 8px; text-align: center; font-weight: bold; color: #1a73e8;">${day.hours > 0 ? day.hours.toFixed(2) : '-'}</td>
+                <td style="padding: 12px 8px; text-align: center; font-weight: bold; color: #1a73e8;">${day.hours > 0 ? formatDecimalToHHMM(parseFloat(day.hours)) : '-'}</td>
                 <td style="padding: 12px 8px; font-size: 10px; color: #666;">${day.notes || '-'}</td>
             </tr>
         `;
     });
 
-    const avgHours = daysWorked > 0 ? (totalHours / daysWorked).toFixed(2) : '0';
+    const avgHoursStr = daysWorked > 0 ? formatDecimalToHHMM(totalHours / daysWorked) : '0:00';
+    const totalHoursStr = formatDecimalToHHMM(totalHours);
 
     return `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #2c3e50; padding: 20px; background: #fff;">
@@ -360,7 +368,7 @@ function buildPDFContent(user, data, weekStart) {
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 40px; text-align: center;">
                 <div style="background: #edf2f7; padding: 15px; border-radius: 10px; border-bottom: 4px solid #1a73e8;">
                     <div style="font-size: 11px; color: #4a5568; text-transform: uppercase; margin-bottom: 5px;">${d.totalHours}</div>
-                    <div style="font-size: 24px; font-weight: bold; color: #1a365d;">${totalHours.toFixed(2)}</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #1a365d;">${totalHoursStr}</div>
                 </div>
                 <div style="background: #ebf8ff; padding: 15px; border-radius: 10px; border-bottom: 4px solid #2b6cb0;">
                     <div style="font-size: 11px; color: #4a5568; text-transform: uppercase; margin-bottom: 5px;">${d.daysWorked}</div>
@@ -368,7 +376,7 @@ function buildPDFContent(user, data, weekStart) {
                 </div>
                 <div style="background: #f0fff4; padding: 15px; border-radius: 10px; border-bottom: 4px solid #27ae60;">
                     <div style="font-size: 11px; color: #4a5568; text-transform: uppercase; margin-bottom: 5px;">${d.avgHours}</div>
-                    <div style="font-size: 24px; font-weight: bold; color: #1a365d;">${avgHours}</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #1a365d;">${avgHoursStr}</div>
                 </div>
             </div>
 

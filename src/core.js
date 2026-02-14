@@ -119,11 +119,19 @@ const AppCore = (() => {
             }
         });
         const daysWorked = datesWithHours.size;
-        const avgHours = daysWorked > 0 ? (totalHours / daysWorked).toFixed(2) : 0;
+        const avgHoursDecimal = daysWorked > 0 ? (totalHours / daysWorked) : 0;
 
-        document.getElementById('totalHours').textContent = totalHours.toFixed(2);
+        // Helper to format decimal to HH:MM
+        const toHHMM = (val) => {
+            if (isNaN(val) || val <= 0) return '0:00';
+            const h = Math.floor(val);
+            const m = Math.round((val - h) * 60);
+            return `${h}:${String(m).padStart(2, '0')}`;
+        };
+
+        document.getElementById('totalHours').textContent = toHHMM(totalHours);
         document.getElementById('daysWorked').textContent = daysWorked;
-        document.getElementById('avgHours').textContent = avgHours;
+        document.getElementById('avgHours').textContent = toHHMM(avgHoursDecimal);
     }
 
     function formatDate(date) {
