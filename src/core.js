@@ -147,7 +147,7 @@ const AppCore = (() => {
         let diffMinutes = endTotalMin - startTotalMin;
         let breakMinutes = 0;
         if (amBreak) breakMinutes += 30;
-        if (pmBreak) breakMinutes += 30;
+        // PM break is purely visual and does not subtract time
 
         const totalMinutes = diffMinutes - breakMinutes;
         return Math.max(0, parseFloat((totalMinutes / 60).toFixed(2)));

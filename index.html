@@ -16,6 +16,18 @@
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-control-geocoder/1.13.0/Control.Geocoder.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* Entry Divider for multiple items in same day */
+        .entry-divider {
+            border-top: 1px dashed rgba(0, 0, 0, 0.15);
+            margin: 10px 0;
+            width: 100%;
+        }
+
+        body.dark-mode .entry-divider {
+            border-top: 1px dashed rgba(255, 255, 255, 0.2);
+        }
+    </style>
 </head>
 
 <body>
@@ -349,7 +361,7 @@
                                     <i class="fas fa-map-marker-alt"></i>
                                 </button>
                                 <div id="editLocationDisplay"
-                                    style="flex:1; padding:10px 12px; border:2px solid var(--border-color); border-radius:6px; background:white;">
+                                    style="flex:1; padding:10px 12px; border:2px solid var(--border-color); border-radius:6px;">
                                     Sin ubicación seleccionada</div>
                             </div>
                         </div>

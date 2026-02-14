@@ -166,3 +166,28 @@ body.dark-mode .user-stat {
     background-color: var(--card-bg);
     color: var(--text-primary);
 }
+
+/* Location UI in Dark Mode */
+body.dark-mode #editLocationDisplay {
+    background-color: #2d2d2d;
+    color: var(--text-primary);
+}
+
+body.dark-mode #locationInfoBtn,
+body.dark-mode #mapSearchBtn {
+    background-color: #2d3748;
+    border: 1px solid #4a5568;
+    color: #e2e8f0;
+}
+
+body.dark-mode #locationInfoBtn:hover,
+body.dark-mode #mapSearchBtn:hover {
+    background-color: #4a5568;
+    color: white;
+}
+
+body.dark-mode #mapSearchInput {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #fff;
+}

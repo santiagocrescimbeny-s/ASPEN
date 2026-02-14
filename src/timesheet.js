@@ -15,16 +15,19 @@ function renderTimesheet() {
 
     Object.keys(grouped).sort().forEach(dateKey => {
         const entries = grouped[dateKey];
-        const day = entries[0].day || '-';
-        const orchards = entries.map(e => e.orchard || '-').filter(Boolean).join('<br>');
-        const workTypes = entries.map(e => e.workType || '-').filter(Boolean).join('<br>');
-        const addresses = entries.map(e => (e.location && e.location.address) ? e.location.address : '-').filter(Boolean).join('<br>');
-        const starts = entries.map(e => e.startTime || '-').join('<br>');
-        const ends = entries.map(e => e.endTime || '-').join('<br>');
-        const amBreaks = entries.map(e => e.amBreak ? '✓' : '-').join('<br>');
-        const pmBreaks = entries.map(e => e.pmBreak ? '✓' : '-').join('<br>');
+        const dateObj = new Date(dateKey + 'T00:00:00');
+        const langDays = (window.I18n && window.I18n.dict[window.I18n.getLang()]) ? window.I18n.dict[window.I18n.getLang()].days : null;
+        const day = langDays ? langDays[dateObj.getDay()] : (entries[0].day || '-');
+        const separator = '<div class="entry-divider"></div>';
+        const orchards = entries.map(e => e.orchard || '-').filter(Boolean).join(separator);
+        const workTypes = entries.map(e => e.workType || '-').filter(Boolean).join(separator);
+        const addresses = entries.map(e => (e.location && e.location.address) ? e.location.address : '-').filter(Boolean).join(separator);
+        const starts = entries.map(e => e.startTime || '-').join(separator);
+        const ends = entries.map(e => e.endTime || '-').join(separator);
+        const amBreaks = entries.map(e => e.amBreak ? '✓' : '-').join(separator);
+        const pmBreaks = entries.map(e => e.pmBreak ? '✓' : '-').join(separator);
         const totalHours = entries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0);
-        const notes = entries.map(e => e.notes || '-').join('<br>');
+        const notes = entries.map(e => e.notes || '-').join(separator);
 
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -257,65 +260,114 @@ function exportToPDF() {
 window.exportToPDF = exportToPDF;
 
 function buildPDFContent(user, data, weekStart) {
-    const monthNames = ['Enero', 'Feb', 'Mar', 'Abr', 'Mayo', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const lang = window.I18n.getLang();
+    const d = window.I18n.dict[lang];
+    const monthNames = d.months;
+    const dayNames = d.days;
+
     const endDate = new Date(weekStart);
     endDate.setDate(endDate.getDate() + 6);
-    const weekDescriptor = `${weekStart.getDate()} al ${endDate.getDate()} de ${monthNames[weekStart.getMonth()]}`;
+
+    const weekDescriptor = `${weekStart.getDate()} ${d.shortMonths[weekStart.getMonth()]} - ${endDate.getDate()} ${d.shortMonths[endDate.getMonth()]} ${endDate.getFullYear()}`;
+    const generationDateStr = `${new Date().getDate()} ${d.months[new Date().getMonth()]} ${new Date().getFullYear()}`;
+
     let totalHours = 0, daysWorked = 0, tableRows = '';
 
-    data.forEach((day) => {
+    data.sort((a, b) => a.date.localeCompare(b.date)).forEach((day) => {
         if (day.hours > 0) { totalHours += parseFloat(day.hours); daysWorked++; }
         const dateObj = new Date(day.date + 'T00:00:00');
-        const dateDisplay = `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${dateObj.getFullYear()}`;
+        const dayName = dayNames[dateObj.getDay()];
+        const dateDisplay = `${String(dateObj.getDate()).padStart(2, '0')} ${d.shortMonths[dateObj.getMonth()]}`;
+
         tableRows += `
-            <tr>
-                <td style="border: 1px solid #ddd; padding: 8px;">${day.day}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">${dateDisplay}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">${day.workType || '-'}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">${day.orchard || '-'}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${day.startTime || '-'}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${day.endTime || '-'}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold; color: #0066cc;">${day.hours > 0 ? day.hours.toFixed(2) : '-'}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">${day.notes || '-'}</td>
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 12px 8px;">${dayName}</td>
+                <td style="padding: 12px 8px;">${dateDisplay}</td>
+                <td style="padding: 12px 8px;">${day.workType || '-'}</td>
+                <td style="padding: 12px 8px;">${day.orchard || '-'}</td>
+                <td style="padding: 12px 8px; text-align: center;">${day.startTime || '-'}</td>
+                <td style="padding: 12px 8px; text-align: center;">${day.amBreak ? 'SI' : 'NO'}</td>
+                <td style="padding: 12px 8px; text-align: center;">${day.pmBreak ? 'SI' : 'NO'}</td>
+                <td style="padding: 12px 8px; text-align: center;">${day.endTime || '-'}</td>
+                <td style="padding: 12px 8px; text-align: center; font-weight: bold; color: #1a73e8;">${day.hours > 0 ? day.hours.toFixed(2) : '-'}</td>
+                <td style="padding: 12px 8px; font-size: 10px; color: #666;">${day.notes || '-'}</td>
             </tr>
         `;
     });
 
-    const avgHours = daysWorked > 0 ? (totalHours / daysWorked).toFixed(2) : 0;
+    const avgHours = daysWorked > 0 ? (totalHours / daysWorked).toFixed(2) : '0';
+
     return `
-        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.4; font-size:12px;">
-            <div style="background: linear-gradient(135deg, #1a365d 0%, #2c5aa0 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                <h1 style="margin: 0; font-size: 28px;">🥝 Orchard Time</h1>
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #2c3e50; padding: 20px; background: #fff;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #1a365d 0%, #2c5aa0 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 25px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div style="font-size: 40px; margin-bottom: 10px;">🥝</div>
+                <h1 style="margin: 0; font-size: 32px; letter-spacing: 1px;">${d.appName}</h1>
+                <p style="margin: 5px 0 0; opacity: 0.9; font-size: 14px;">${d.pdfSubtitle}</p>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
-                <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #0066cc;">
-                    <p><strong>Nombre:</strong> ${user.firstName} ${user.lastName}</p>
-                    <p><strong>IRD:</strong> ${user.ird}</p>
+
+            <!-- Reported Period -->
+            <div style="background: #f0f7ff; padding: 12px 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #1a73e8; display: flex; align-items: center;">
+                <span style="font-weight: bold; color: #1a365d; margin-right: 10px;">${d.pdfPeriod}</span>
+                <span style="color: #444;">${weekDescriptor}</span>
+            </div>
+
+            <!-- Info Boxes -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <div style="background: #fdfdfd; padding: 15px; border-radius: 10px; border: 1px solid #eef2f7; border-left: 5px solid #1a73e8;">
+                    <h3 style="margin: 0 0 12px; font-size: 12px; color: #1a365d; text-transform: uppercase; letter-spacing: 0.5px;">${d.pdfPersonalData}</h3>
+                    <p style="margin: 5px 0; font-size: 13px;"><strong>${d.pdfFullName}</strong> ${user.firstName} ${user.lastName}</p>
+                    <p style="margin: 5px 0; font-size: 13px;"><strong>IRD:</strong> ${user.ird || '-'}</p>
+                    <p style="margin: 5px 0; font-size: 13px;"><strong>Pasaporte:</strong> ${user.passport || '-'}</p>
                 </div>
-                <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #22b55f;">
-                    <p><strong>Período:</strong> Semana del ${weekDescriptor}</p>
-                    <p><strong>Tax Code:</strong> ${user.taxCode}</p>
+                <div style="background: #fdfdfd; padding: 15px; border-radius: 10px; border: 1px solid #eef2f7; border-left: 5px solid #27ae60;">
+                    <h3 style="margin: 0 0 12px; font-size: 12px; color: #1a365d; text-transform: uppercase; letter-spacing: 0.5px;">${d.pdfTaxInfo}</h3>
+                    <p style="margin: 5px 0; font-size: 13px;"><strong>${d.address}:</strong> ${user.address || '-'}</p>
+                    <p style="margin: 5px 0; font-size: 13px;"><strong>${d.pdfTaxCode}</strong> ${user.taxCode || '-'}</p>
+                    <p style="margin: 5px 0; font-size: 13px;"><strong>${d.pdfGenDate}</strong> ${generationDateStr}</p>
                 </div>
             </div>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+
+            <!-- Table -->
+            <h3 style="font-size: 12px; color: #1a365d; text-transform: uppercase; margin-bottom: 10px;">${d.pdfWorkDetails}</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; border-radius: 8px; overflow: hidden; font-size: 11px;">
                 <thead>
-                    <tr style="background: #1a365d; color: white;">
-                        <th style="padding: 10px; border: 1px solid #ddd;">Día</th>
-                        <th style="padding: 10px; border: 1px solid #ddd;">Fecha</th>
-                        <th style="padding: 10px; border: 1px solid #ddd;">Trabajo</th>
-                        <th style="padding: 10px; border: 1px solid #ddd;">Huerto</th>
-                        <th style="padding: 10px; border: 1px solid #ddd;">Inicio</th>
-                        <th style="padding: 10px; border: 1px solid #ddd;">Fin</th>
-                        <th style="padding: 10px; border: 1px solid #ddd;">Horas</th>
-                        <th style="padding: 10px; border: 1px solid #ddd;">Notas</th>
+                    <tr style="background: #1a365d; color: white; text-align: left;">
+                        <th style="padding: 12px 8px;">${d.day}</th>
+                        <th style="padding: 12px 8px;">${d.date}</th>
+                        <th style="padding: 12px 8px;">${d.workType}</th>
+                        <th style="padding: 12px 8px;">${d.orchard}</th>
+                        <th style="padding: 12px 8px; text-align: center;">${d.startTime}</th>
+                        <th style="padding: 12px 8px; text-align: center;">AM Break</th>
+                        <th style="padding: 12px 8px; text-align: center;">PM Break</th>
+                        <th style="padding: 12px 8px; text-align: center;">${d.endTime}</th>
+                        <th style="padding: 12px 8px; text-align: center;">${d.hours}</th>
+                        <th style="padding: 12px 8px;">${d.notes}</th>
                     </tr>
                 </thead>
                 <tbody>${tableRows}</tbody>
             </table>
-            <div style="display: flex; gap: 20px; justify-content: center;">
-                <p><strong>Total:</strong> ${totalHours.toFixed(2)} hrs</p>
-                <p><strong>Días:</strong> ${daysWorked}</p>
-                <p><strong>Promedio:</strong> ${avgHours} hrs/día</p>
+
+            <!-- Summary Cards -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 40px; text-align: center;">
+                <div style="background: #edf2f7; padding: 15px; border-radius: 10px; border-bottom: 4px solid #1a73e8;">
+                    <div style="font-size: 11px; color: #4a5568; text-transform: uppercase; margin-bottom: 5px;">${d.totalHours}</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #1a365d;">${totalHours.toFixed(2)}</div>
+                </div>
+                <div style="background: #ebf8ff; padding: 15px; border-radius: 10px; border-bottom: 4px solid #2b6cb0;">
+                    <div style="font-size: 11px; color: #4a5568; text-transform: uppercase; margin-bottom: 5px;">${d.daysWorked}</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #1a365d;">${daysWorked}</div>
+                </div>
+                <div style="background: #f0fff4; padding: 15px; border-radius: 10px; border-bottom: 4px solid #27ae60;">
+                    <div style="font-size: 11px; color: #4a5568; text-transform: uppercase; margin-bottom: 5px;">${d.avgHours}</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #1a365d;">${avgHours}</div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #a0aec0; font-size: 10px;">
+                <p style="margin: 2px 0;">${d.pdfFooter1}</p>
+                <p style="margin: 2px 0;">${d.pdfFooter2} | Period: ${weekDescriptor}</p>
             </div>
         </div>
     `;
@@ -350,7 +402,8 @@ function autoSetDayOfWeek() {
     const dateVal = document.getElementById('editDate').value;
     if (!dateVal) return;
     const d = new Date(dateVal + 'T00:00:00');
-    const names = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const lang = window.I18n.getLang();
+    const names = window.I18n.dict[lang].days;
     const el = document.getElementById('editDay'); if (el) el.value = names[d.getDay()];
 }
 window.autoSetDayOfWeek = autoSetDayOfWeek;
