@@ -8,7 +8,8 @@ import {
     updateDoc,
     deleteDoc,
     doc,
-    setDoc
+    setDoc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const AppCore = (() => {
@@ -29,14 +30,19 @@ const AppCore = (() => {
     function getMonday(date) {
         const d = new Date(date);
         d.setHours(0, 0, 0, 0);
-        const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-        return new Date(d.setDate(diff));
+        const day = d.getDay(); // 0 is Sunday, 1 is Monday...
+        const diff = d.getDate() - (day === 0 ? 6 : day - 1);
+        const monday = new Date(d.setDate(diff));
+        monday.setHours(0, 0, 0, 0);
+        return monday;
     }
 
     function getWeekKey(date) {
         const d = getMonday(date);
-        return d.toISOString().split('T')[0];
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
     async function loadTimesheetData() {
@@ -61,7 +67,6 @@ const AppCore = (() => {
     }
 
     function updateUI() {
-        // These updates are still DOM-based, they will be triggered after data is loaded
         updateHeader();
         updateSidebar();
         if (window.renderTimesheet) window.renderTimesheet();
@@ -70,7 +75,7 @@ const AppCore = (() => {
     function updateHeader() {
         const lang = (window.I18n && window.I18n.getLang) ? window.I18n.getLang() : 'es';
         const monthNamesEs = ['Enero', 'Feb', 'Mar', 'Abr', 'Mayo', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        const monthNamesEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthNamesEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
         const monthNames = lang === 'en' ? monthNamesEn : monthNamesEs;
 
         const startDate = currentWeekStart;
@@ -87,7 +92,6 @@ const AppCore = (() => {
 
         const userNameEl = document.getElementById('userName'); if (userNameEl) userNameEl.textContent = `${currentUser.firstName} ${currentUser.lastName}`;
 
-        // Payment status in Firestore
         loadPaymentStatus();
     }
 
@@ -121,7 +125,6 @@ const AppCore = (() => {
         const daysWorked = datesWithHours.size;
         const avgHoursDecimal = daysWorked > 0 ? (totalHours / daysWorked) : 0;
 
-        // Helper to format decimal to HH:MM
         const toHHMM = (val) => {
             if (isNaN(val) || val <= 0) return '0:00';
             const h = Math.floor(val);
@@ -149,13 +152,11 @@ const AppCore = (() => {
         let startTotalMin = startHour * 60 + startMin;
         let endTotalMin = endHour * 60 + endMin;
 
-        // If end time is before start time, it likely crosses midnight
         if (endTotalMin < startTotalMin) endTotalMin += 24 * 60;
 
         let diffMinutes = endTotalMin - startTotalMin;
         let breakMinutes = 0;
         if (amBreak) breakMinutes += 30;
-        // PM break is purely visual and does not subtract time
 
         const totalMinutes = diffMinutes - breakMinutes;
         return Math.max(0, parseFloat((totalMinutes / 60).toFixed(2)));
@@ -195,13 +196,18 @@ const AppCore = (() => {
 
     async function updateEntryById(id, data) {
         const hours = calculateHours(data.startTime, data.endTime, data.amBreak, data.pmBreak);
-        const updateData = { ...data, hours };
+        const newWeekStart = getWeekKey(new Date(data.date + 'T00:00:00'));
+        const updateData = { ...data, hours, weekStart: newWeekStart };
 
         try {
             await updateDoc(doc(db, "timesheets", id), updateData);
             const idx = timesheetData.findIndex(e => e.id === id);
             if (idx !== -1) {
-                timesheetData[idx] = { ...timesheetData[idx], ...updateData };
+                if (newWeekStart !== getWeekKey(currentWeekStart)) {
+                    timesheetData.splice(idx, 1);
+                } else {
+                    timesheetData[idx] = { ...timesheetData[idx], ...updateData };
+                }
                 updateUI();
             }
             return true;
@@ -295,10 +301,6 @@ const AppCore = (() => {
     };
 })();
 
-// Re-importing getDoc which was missing in imports
-import { getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-// Global exposure
 window.AppCore = AppCore;
 window.initializeApp = (user) => AppCore.init(user);
 window.prevWeek = () => AppCore.previousWeek();
