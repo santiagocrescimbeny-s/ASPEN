@@ -183,9 +183,13 @@ const AppCore = (() => {
 
         try {
             const docRef = await addDoc(collection(db, "timesheets"), newEntry);
-            if (weekStr === getWeekKey(currentWeekStart)) {
+            const currentWeekStr = getWeekKey(currentWeekStart);
+            if (weekStr === currentWeekStr) {
                 timesheetData.push({ id: docRef.id, ...newEntry });
                 updateUI();
+            } else {
+                // If added to another week, navigate there so the user sees it
+                await goToDate(entry.date);
             }
             return docRef.id;
         } catch (e) {
@@ -196,18 +200,19 @@ const AppCore = (() => {
 
     async function updateEntryById(id, data) {
         const hours = calculateHours(data.startTime, data.endTime, data.amBreak, data.pmBreak);
-        const newWeekStart = getWeekKey(new Date(data.date + 'T00:00:00'));
-        const updateData = { ...data, hours, weekStart: newWeekStart };
+        const newWeekStartStr = getWeekKey(new Date(data.date + 'T00:00:00'));
+        const updateData = { ...data, hours, weekStart: newWeekStartStr };
 
         try {
             await updateDoc(doc(db, "timesheets", id), updateData);
+            const currentWeekStr = getWeekKey(currentWeekStart);
             const idx = timesheetData.findIndex(e => e.id === id);
-            if (idx !== -1) {
-                if (newWeekStart !== getWeekKey(currentWeekStart)) {
-                    timesheetData.splice(idx, 1);
-                } else {
-                    timesheetData[idx] = { ...timesheetData[idx], ...updateData };
-                }
+
+            if (newWeekStartStr !== currentWeekStr) {
+                // If it moved to another week, navigate there
+                await goToDate(data.date);
+            } else if (idx !== -1) {
+                timesheetData[idx] = { ...timesheetData[idx], ...updateData };
                 updateUI();
             }
             return true;
