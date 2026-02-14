@@ -360,9 +360,10 @@
                             <label data-i18n-key="startTime">Hora Inicio</label>
                             <div style="display:flex; gap:8px; align-items:center;">
                                 <input type="text" id="editStartTimeText" placeholder="HH o HH:MM"
-                                    oninput="onStartTimeInput()" style="flex:1; min-width:160px;">
+                                    oninput="onStartTimeInput()" onblur="onStartTimeBlur()"
+                                    style="flex:1; min-width:160px;">
                                 <label class="toggle-switch" title="AM / PM">
-                                    <input type="checkbox" id="editStartAmPmToggle">
+                                    <input type="checkbox" id="editStartAmPmToggle" onchange="onStartAmPmChange()">
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <span id="editStartAmPmLabel"
@@ -373,9 +374,10 @@
                             <label data-i18n-key="endTime">Hora Fin</label>
                             <div style="display:flex; gap:8px; align-items:center;">
                                 <input type="text" id="editEndTimeText" placeholder="HH o HH:MM"
-                                    oninput="onEndTimeInput()" style="flex:1; min-width:160px;">
+                                    oninput="onEndTimeInput()" onblur="onEndTimeBlur()"
+                                    style="flex:1; min-width:160px;">
                                 <label class="toggle-switch" title="AM / PM">
-                                    <input type="checkbox" id="editEndAmPmToggle">
+                                    <input type="checkbox" id="editEndAmPmToggle" onchange="onEndAmPmChange()">
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <span id="editEndAmPmLabel"

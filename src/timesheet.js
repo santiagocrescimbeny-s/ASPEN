@@ -357,14 +357,13 @@ window.autoSetDayOfWeek = autoSetDayOfWeek;
 
 function normalizeTimeInput(val, toggleId, labelId) {
     if (!val) return '';
-    const t = val.trim();
-    let hh, mm;
+    let t = val.trim().replace('.', ':');
+    let hh, mm = 0;
 
-    // Handle formats like 1500 or 900
+    // Handle formats like 1500, 900, 14, 8
     if (/^\d{1,4}$/.test(t)) {
         if (t.length <= 2) {
             hh = parseInt(t, 10);
-            mm = 0;
         } else if (t.length === 3) {
             hh = parseInt(t.slice(0, 1), 10);
             mm = parseInt(t.slice(1), 10);
@@ -373,10 +372,10 @@ function normalizeTimeInput(val, toggleId, labelId) {
             mm = parseInt(t.slice(2), 10);
         }
     } else {
-        const m = t.match(/^(\d{1,2}):(\d{1,2})$/);
+        const m = t.match(/^(\d{1,2})[:](\d{1,2})?$/);
         if (m) {
             hh = parseInt(m[1], 10);
-            mm = parseInt(m[2], 10);
+            mm = parseInt(m[2] || '0', 10);
         }
     }
 
@@ -388,14 +387,18 @@ function normalizeTimeInput(val, toggleId, labelId) {
                 if (toggle) toggle.checked = true;
                 if (label) label.textContent = 'PM';
                 if (hh > 12) hh -= 12;
-            } else {
-                if (hh === 0) hh = 12;
+            } else if (hh === 0) {
+                hh = 12;
                 if (toggle) toggle.checked = false;
                 if (label) label.textContent = 'AM';
             }
         } else {
             if (hh === 0) hh = 12; else if (hh > 12) hh -= 12;
         }
+
+        if (isNaN(mm)) mm = 0;
+        if (mm >= 60) mm = 59;
+
         return String(hh) + ':' + String(mm).padStart(2, '0');
     }
     return t;
@@ -421,6 +424,22 @@ function onEndTimeBlur() {
     updateEditHours();
 }
 window.onEndTimeBlur = onEndTimeBlur;
+
+function onStartAmPmChange() {
+    const toggle = document.getElementById('editStartAmPmToggle');
+    const label = document.getElementById('editStartAmPmLabel');
+    if (toggle && label) label.textContent = toggle.checked ? 'PM' : 'AM';
+    updateEditHours();
+}
+window.onStartAmPmChange = onStartAmPmChange;
+
+function onEndAmPmChange() {
+    const toggle = document.getElementById('editEndAmPmToggle');
+    const label = document.getElementById('editEndAmPmLabel');
+    if (toggle && label) label.textContent = toggle.checked ? 'PM' : 'AM';
+    updateEditHours();
+}
+window.onEndAmPmChange = onEndAmPmChange;
 
 document.addEventListener('DOMContentLoaded', () => {
     const dateInput = document.getElementById('editDate');
