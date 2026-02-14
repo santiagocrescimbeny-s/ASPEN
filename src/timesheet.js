@@ -221,24 +221,24 @@ async function saveEditedDay() {
     }
 
     if (editingEntryId) {
-        const success = await window.AppCore.updateEntryById(editingEntryId, {
+        const result = await window.AppCore.updateEntryById(editingEntryId, {
             date, day, orchard, workType, startTime, endTime, amBreak, pmBreak, notes, location, hours
         });
-        if (success) {
+        if (result === true) {
             closeEditModal();
             showEditAlert('Jornada actualizada', 'success');
         } else {
-            showEditAlert('Error al actualizar jornada', 'error');
+            showEditAlert('Error: ' + (result || 'Error al actualizar jornada'), 'error');
         }
     } else {
-        const newId = await window.AppCore.addEntry({
+        const result = await window.AppCore.addEntry({
             date, day, orchard, workType, startTime, endTime, amBreak, pmBreak, notes, location, hours
         });
-        if (newId) {
+        if (typeof result === 'string' || result) {
             closeEditModal();
             showEditAlert('Jornada agregada', 'success');
         } else {
-            showEditAlert('Error al guardar jornada', 'error');
+            showEditAlert('Error al guardar jornada. Revisa tu conexión o perfil.', 'error');
         }
     }
 }

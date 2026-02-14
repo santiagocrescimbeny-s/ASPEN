@@ -163,6 +163,7 @@ const AppCore = (() => {
     }
 
     async function addEntry(entry) {
+        if (!currentUser) return "Usuario no autenticado o perfil incompleto";
         const weekStr = getWeekKey(new Date(entry.date + 'T00:00:00'));
         const newEntry = {
             uid: currentUser.uid,
@@ -194,11 +195,12 @@ const AppCore = (() => {
             return docRef.id;
         } catch (e) {
             console.error("Error adding entry:", e);
-            return null;
+            return e.message || "Error al conectar con la base de datos";
         }
     }
 
     async function updateEntryById(id, data) {
+        if (!currentUser) return "Sesión expirada";
         const hours = calculateHours(data.startTime, data.endTime, data.amBreak, data.pmBreak);
         const newWeekStartStr = getWeekKey(new Date(data.date + 'T00:00:00'));
         const updateData = { ...data, hours, weekStart: newWeekStartStr };
@@ -218,7 +220,7 @@ const AppCore = (() => {
             return true;
         } catch (e) {
             console.error("Error updating entry:", e);
-            return false;
+            return e.message || "Error al actualizar registro";
         }
     }
 
@@ -252,7 +254,8 @@ const AppCore = (() => {
     }
 
     async function goToDate(date) {
-        currentWeekStart = getMonday(new Date(date));
+        const d = typeof date === 'string' ? new Date(date + 'T00:00:00') : new Date(date);
+        currentWeekStart = getMonday(d);
         await loadTimesheetData();
         updateUI();
     }
