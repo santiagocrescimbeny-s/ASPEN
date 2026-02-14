@@ -26,12 +26,16 @@
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     width: 100%;
     height: 100%;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: var(--text-primary);
-    background: linear-gradient(135deg, var(--dark-bg) 0%, #2c5aa0 100%);
+    background: transparent;
+    /* Changed from gradient to transparent for video */
+    overflow: hidden;
+    /* Hide scrollbars as requested */
 }
 
 /* Auth Container */
@@ -41,7 +45,8 @@ html, body {
     justify-content: center;
     min-height: 100vh;
     padding: 20px;
-    background: linear-gradient(135deg, var(--dark-bg) 0%, #2c5aa0 100%);
+    background: rgba(26, 54, 93, 0.3);
+    /* Semi-transparent */
     position: fixed;
     top: 0;
     left: 0;
@@ -78,6 +83,16 @@ html, body {
     position: relative;
     max-height: calc(100vh - 80px);
     overflow-y: auto;
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.auth-box::-webkit-scrollbar {
+    display: none;
 }
 
 .auth-box::before {
@@ -104,8 +119,15 @@ html, body {
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
 }
 
 .auth-header h1 {
@@ -135,6 +157,7 @@ html, body {
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -349,6 +372,7 @@ html, body {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -385,7 +409,9 @@ html, body {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Responsive Design */
@@ -407,7 +433,8 @@ html, body {
     .form-group select,
     .form-group textarea {
         padding: 10px 12px;
-        font-size: 16px; /* Prevents zoom on iOS */
+        font-size: 16px;
+        /* Prevents zoom on iOS */
     }
 
     .btn {

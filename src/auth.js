@@ -414,19 +414,22 @@ function showAlert(message, type) {
    INITIALIZATION
    ============================================ */
 
-// Initialize AuthManager on page load - Auto-login with demo user
+// Initialize AuthManager on page load
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Initializing AuthManager...');
     AuthManager.init();
     
-    // Always auto-login with demo user
-    const demoResult = AuthManager.login('santiagocrescimbeny@gmail.com', '123456');
-    
-    if (demoResult.success) {
-        console.log('Auto-logged in with demo user:', demoResult.user.email);
-        showAppUI(true);
-        initializeApp(demoResult.user);
+    // Check for active session
+    if (AuthManager.isLoggedIn()) {
+        const session = AuthManager.getCurrentSession();
+        console.log('Restoring session for:', session.email);
+        if (typeof showAuthUI === 'function') showAuthUI(false);
+        if (typeof showAppUI === 'function') showAppUI(true);
+        if (typeof initializeApp === 'function') initializeApp(session);
     } else {
-        console.error('Failed to auto-login:', demoResult.error);
+        // No session, show login
+        console.log('No active session, showing login.');
+        if (typeof showAuthUI === 'function') showAuthUI(true);
+        if (typeof showAppUI === 'function') showAppUI(false);
     }
 });

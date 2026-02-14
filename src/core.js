@@ -28,6 +28,7 @@ const AppCore = (() => {
     // Get Monday of current week
     function getMonday(date) {
         const d = new Date(date);
+        d.setHours(0, 0, 0, 0); // Normalize to local midnight to avoid UTC date shift
         const day = d.getDay();
         const diff = d.getDate() - day + (day === 0 ? -6 : 1);
         return new Date(d.setDate(diff));
@@ -79,7 +80,7 @@ const AppCore = (() => {
         endDate.setDate(endDate.getDate() + 6);
 
         const weekText = (lang === 'en')
-            ? `Week: ${String(startDate.getDate()).padStart(2,'0')}/${String(startDate.getMonth()+1).padStart(2,'0')}/${startDate.getFullYear()} - ${String(endDate.getDate()).padStart(2,'0')}/${String(endDate.getMonth()+1).padStart(2,'0')}/${endDate.getFullYear()}`
+            ? `Week: ${String(startDate.getDate()).padStart(2, '0')}/${String(startDate.getMonth() + 1).padStart(2, '0')}/${startDate.getFullYear()} - ${String(endDate.getDate()).padStart(2, '0')}/${String(endDate.getMonth() + 1).padStart(2, '0')}/${endDate.getFullYear()}`
             : `Semana del ${startDate.getDate()} al ${endDate.getDate()} de ${monthNames[startDate.getMonth()]}`;
 
         const weekDisplayEl = document.getElementById('weekDisplay'); if (weekDisplayEl) weekDisplayEl.textContent = weekText;
@@ -98,7 +99,7 @@ const AppCore = (() => {
 
     // Update sidebar
     function updateSidebar() {
-        document.getElementById('sidebarUserName').textContent = 
+        document.getElementById('sidebarUserName').textContent =
             `${currentUser.firstName} ${currentUser.lastName}`;
         document.getElementById('sidebarUserIRD').textContent = currentUser.ird;
         document.getElementById('sidebarUserAddress').textContent = currentUser.address;
@@ -321,7 +322,7 @@ const AppCore = (() => {
     function setPaymentStatus(paid, persist = true) {
         const indicator = document.getElementById('paymentIndicator');
         const status = document.getElementById('paymentStatus');
-        
+
         if (paid) {
             if (indicator) { indicator.className = 'payment-indicator paid'; indicator.textContent = '✅ Pagado'; }
             if (status) status.textContent = 'Pagado';
@@ -334,7 +335,7 @@ const AppCore = (() => {
             const paidKey = STORAGE_KEY + 'paid_' + currentUser.email + '_' + currentWeekStart.toISOString().split('T')[0];
             try {
                 localStorage.setItem(paidKey, paid ? '1' : '0');
-            } catch (e) {}
+            } catch (e) { }
         }
     }
 
@@ -396,7 +397,7 @@ function updatePaymentStatus() {
 
 function loadSampleTimesheetData() {
     const data = AppCore.getTimesheetData();
-    
+
     // Sample data for demonstration
     const sampleData = [
         { workType: 'Tutoring', startTime: '08:00', endTime: '12:30', amBreak: true, notes: '✅ Completado' },

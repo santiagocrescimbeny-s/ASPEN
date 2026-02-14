@@ -1,0 +1,168 @@
+/* ============================================
+   DARK MODE STYLES
+   ============================================ */
+
+body.dark-mode {
+    --text-primary: #f0f0f0;
+    --text-secondary: #aaaaaa;
+    --card-bg: #1e1e1e;
+    /* Darker card background */
+    --border-color: #333333;
+    background-color: #121212 !important;
+    /* Ensure background is dark */
+}
+
+/* Auth Container in Dark Mode */
+body.dark-mode .auth-box {
+    background-color: rgba(30, 30, 30, 0.95);
+    /* Slightly transparent dark background */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    border: 1px solid #333;
+}
+
+body.dark-mode .auth-header h1 {
+    color: #fff;
+}
+
+/* App Main Content in Dark Mode */
+body.dark-mode .main-content {
+    background-color: #121212;
+}
+
+/* Header in Dark Mode */
+body.dark-mode .header {
+    background: linear-gradient(135deg, rgba(15, 28, 46, 0.85) 0%, rgba(26, 54, 93, 0.85) 100%);
+    border-bottom: 3px solid #b8962e;
+    backdrop-filter: blur(5px);
+}
+
+/* Global Input Styles for Dark Mode */
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #fff;
+}
+
+body.dark-mode input::placeholder {
+    color: #888;
+}
+
+body.dark-mode input:focus,
+body.dark-mode select:focus,
+body.dark-mode textarea:focus {
+    background-color: #333;
+    border-color: var(--primary-light);
+    outline: none;
+}
+
+body.dark-mode .card {
+    background-color: var(--card-bg);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .user-stat,
+body.dark-mode .timesheet-table tbody tr {
+    border-bottom-color: var(--border-color);
+}
+
+body.dark-mode .timesheet-table thead {
+    background: linear-gradient(135deg, #0f1c2e 0%, #1a365d 100%);
+}
+
+body.dark-mode .timesheet-table tbody tr:hover {
+    background-color: #252525;
+}
+
+body.dark-mode .week-range {
+    background-color: #2d2d2d;
+    color: #fff;
+    border-color: #444;
+}
+
+/* Control Bar in Dark Mode */
+body.dark-mode .controls-bar {
+    background-color: var(--card-bg);
+    border: 1px solid #333;
+}
+
+/* Modals in Dark Mode */
+body.dark-mode .modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+}
+
+body.dark-mode .modal-header {
+    background: linear-gradient(135deg, #0f1c2e 0%, #1a365d 100%);
+}
+
+body.dark-mode .close {
+    color: #fff;
+}
+
+
+/* Fix for Table Visibility */
+body.dark-mode .timesheet-wrapper {
+    background-color: var(--card-bg);
+    border: 1px solid #333;
+}
+
+body.dark-mode .timesheet-table td {
+    color: var(--text-primary);
+    border-bottom-color: #333;
+}
+
+body.dark-mode .timesheet-table tbody tr:hover {
+    background-color: #2a2a2a;
+}
+
+/* Fix for Buttons in Dark Mode */
+body.dark-mode .action-btn.edit {
+    background-color: #1a365d;
+    /* Dark blue */
+    color: #4ea8de;
+    /* Light blue text */
+}
+
+body.dark-mode .action-btn.edit:hover {
+    background-color: #4ea8de;
+    color: #fff;
+}
+
+body.dark-mode .action-btn.delete {
+    background-color: #4a1a1a;
+    /* Dark red */
+    color: #ff6b6b;
+    /* Light red text */
+}
+
+body.dark-mode .action-btn.delete:hover {
+    background-color: #ff6b6b;
+    color: #fff;
+}
+
+/* Ensure main buttons are visible */
+body.dark-mode .btn {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+    color: white;
+    /* Default text color */
+}
+
+/* Secondary Buttons (Prev/Next Week) */
+body.dark-mode .btn-secondary {
+    background-color: #2d3748;
+    border: 1px solid #4a5568;
+    color: #e2e8f0;
+}
+
+body.dark-mode .btn-secondary:hover {
+    background-color: #4a5568;
+    color: white;
+}
+
+/* Fix small stats cards if they use .user-stat */
+body.dark-mode .user-stat {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+}

@@ -5,9 +5,12 @@
 const ExportManager = (() => {
     // Format data for export
     function prepareExportData(user, timesheetData, weekStart) {
-        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        
+        const lang = I18n.getLang();
+        const d = I18n.dict[lang];
+
+        // Use months from dictionary or fallback
+        const monthNames = d.months || ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekEnd.getDate() + 6);
 
@@ -51,7 +54,7 @@ const ExportManager = (() => {
                 totalHours: totalHours.toFixed(2),
                 daysWorked,
                 avgHours,
-                generatedDate: new Date().toLocaleDateString('es-AR', {
+                generatedDate: new Date().toLocaleDateString(lang === 'en' ? 'en-NZ' : 'es-AR', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
@@ -63,8 +66,10 @@ const ExportManager = (() => {
 
     // Format date to full display format
     function formatDateFull(dateStr) {
-        const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
-                          'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        const lang = I18n.getLang();
+        const d = I18n.dict[lang];
+        const monthNames = d.shortMonths || ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
         const date = new Date(dateStr + 'T00:00:00');
         return `${String(date.getDate()).padStart(2, '0')} ${monthNames[date.getMonth()]}`;
     }
@@ -72,10 +77,10 @@ const ExportManager = (() => {
     // Generate professional PDF
     function generatePDF(user, timesheetData, weekStart) {
         const exportData = prepareExportData(user, timesheetData, weekStart);
-        
+
         // Create document element
         const docElement = createPDFDocument(exportData);
-        
+
         // PDF options
         const options = {
             margin: 10,
@@ -92,6 +97,8 @@ const ExportManager = (() => {
     // Create PDF document HTML
     function createPDFDocument(data) {
         const { user, week, summary, data: timesheetRows } = data;
+        const lang = I18n.getLang();
+        const d = I18n.dict[lang];
 
         const rows = timesheetRows.map(row => `
             <tr>
@@ -100,8 +107,8 @@ const ExportManager = (() => {
                 <td style="border: 1px solid #ddd; padding: 10px; font-size: 11px;">${row.workType || '-'}</td>
                 <td style="border: 1px solid #ddd; padding: 10px; font-size: 11px;">${row.orchard || '-'}</td>
                 <td style="border: 1px solid #ddd; padding: 10px; font-size: 11px; text-align: center;">${row.startTime || '-'}</td>
-                <td style="border: 1px solid #ddd; padding: 10px; font-size: 11px; text-align: center;">${row.amBreak ? 'SI' : 'NO'}</td>
-                <td style="border: 1px solid #ddd; padding: 10px; font-size: 11px; text-align: center;">${row.pmBreak ? 'SI' : 'NO'}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; font-size: 11px; text-align: center;">${row.amBreak ? (lang === 'en' ? 'YES' : 'SI') : 'NO'}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; font-size: 11px; text-align: center;">${row.pmBreak ? (lang === 'en' ? 'YES' : 'SI') : 'NO'}</td>
                 <td style="border: 1px solid #ddd; padding: 10px; font-size: 11px; text-align: center;">${row.endTime || '-'}</td>
                 <td style="border: 1px solid #ddd; padding: 10px; font-size: 11px; text-align: center; font-weight: bold; color: #0066cc;">${row.hoursFormatted}</td>
                 <td style="border: 1px solid #ddd; padding: 10px; font-size: 10px;">${row.notes || '-'}</td>
@@ -110,17 +117,17 @@ const ExportManager = (() => {
 
         const doc = document.createElement('div');
         doc.innerHTML = `
-            <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #333; line-height: 1.5;">
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #333; line-height: 1.5; width: 1100px; padding: 20px; background: white;">
                 <!-- Header -->
                 <div style="background: linear-gradient(135deg, #1a365d 0%, #2c5aa0 100%); color: white; padding: 25px; border-radius: 8px; margin-bottom: 25px; text-align: center;">
-                    <div style="font-size: 32px; margin-bottom: 10px;">🌾</div>
-                    <h1 style="margin: 0; font-size: 28px; font-weight: 700;">AgriTime Pro</h1>
-                    <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Reporte Profesional de Jornadas Laborales</p>
+                    <div style="font-size: 32px; margin-bottom: 10px;">🥝</div>
+                    <h1 style="margin: 0; font-size: 28px; font-weight: 700;">${d.pdfTitle}</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">${d.pdfSubtitle}</p>
                 </div>
 
                 <!-- Period Info -->
                 <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; border-left: 4px solid #0066cc; margin-bottom: 25px; font-size: 13px;">
-                    <strong>Período Reportado:</strong> ${week.label} de ${week.start.getFullYear()}
+                    <strong>${d.pdfPeriod}</strong> ${week.label}
                 </div>
 
                 <!-- User Information in Two Columns -->
@@ -128,16 +135,16 @@ const ExportManager = (() => {
                     <!-- User Data Column 1 -->
                     <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid #0066cc;">
                         <div style="font-weight: 700; color: #1a365d; margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Datos Personales
+                            ${d.pdfPersonalData}
                         </div>
                         <div style="font-size: 12px; line-height: 1.8;">
-                            <div><strong>Nombre Completo:</strong></div>
+                            <div><strong>${d.pdfFullName}</strong></div>
                             <div style="margin-bottom: 10px; color: #666;">${user.fullName}</div>
                             
-                            <div><strong>IRD:</strong></div>
+                            <div><strong>${d.ird}</strong></div>
                             <div style="margin-bottom: 10px; color: #666;">${user.ird}</div>
                             
-                            <div><strong>Pasaporte:</strong></div>
+                            <div><strong>${d.passport}</strong></div>
                             <div style="color: #666;">${user.passport}</div>
                         </div>
                     </div>
@@ -145,16 +152,16 @@ const ExportManager = (() => {
                     <!-- User Data Column 2 -->
                     <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid #22b55f;">
                         <div style="font-weight: 700; color: #1a365d; margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Información Fiscal
+                            ${d.pdfTaxInfo}
                         </div>
                         <div style="font-size: 12px; line-height: 1.8;">
-                            <div><strong>Domicilio:</strong></div>
+                            <div><strong>${d.address}</strong></div>
                             <div style="margin-bottom: 10px; color: #666;">${user.address}</div>
                             
-                            <div><strong>Tax Code:</strong></div>
+                            <div><strong>${d.pdfTaxCode}</strong></div>
                             <div style="margin-bottom: 10px; color: #666;">${user.taxCode}</div>
                             
-                            <div><strong>Fecha Generación:</strong></div>
+                            <div><strong>${d.pdfGenDate}</strong></div>
                             <div style="color: #666;">${summary.generatedDate}</div>
                         </div>
                     </div>
@@ -163,21 +170,21 @@ const ExportManager = (() => {
                 <!-- Timesheet Table -->
                 <div style="margin-bottom: 25px;">
                     <div style="font-weight: 700; color: #1a365d; margin-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #0066cc; padding-bottom: 8px;">
-                        Detalle de Jornadas Laborales
+                        ${d.pdfWorkDetails}
                     </div>
                     <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                         <thead>
                             <tr style="background: linear-gradient(135deg, #1a365d 0%, #2c5aa0 100%); color: white;">
-                                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: 700;">Día</th>
-                                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: 700;">Fecha</th>
-                                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: 700;">Tipo Trabajo</th>
-                                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: 700;">Huerto</th>
-                                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: 700;">Inicio</th>
-                                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: 700;">AM Break</th>
-                                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: 700;">PM Break</th>
-                                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: 700;">Fin</th>
-                                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: 700; background: #0066cc;">Horas</th>
-                                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: 700;">Notas</th>
+                                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: 700;">${d.day}</th>
+                                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: 700;">${d.date}</th>
+                                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: 700;">${d.workType}</th>
+                                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: 700;">${d.orchard}</th>
+                                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: 700;">${d.startTime}</th>
+                                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: 700;">${d.amBreak}</th>
+                                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: 700;">${d.pmBreak}</th>
+                                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: 700;">${d.endTime}</th>
+                                <th style="border: 1px solid #ddd; padding: 12px; text-align: center; font-weight: 700; background: #0066cc;">${d.hours}</th>
+                                <th style="border: 1px solid #ddd; padding: 12px; text-align: left; font-weight: 700;">${d.notes}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -186,26 +193,26 @@ const ExportManager = (() => {
                     </table>
                 </div>
 
-                <!-- Summary Statistics -->
+                <!-- Summary statistics -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
                     <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #0066cc; text-align: center;">
-                        <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; font-weight: 600;">Total Horas</div>
+                        <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; font-weight: 600;">${d.totalHours}</div>
                         <div style="font-size: 24px; font-weight: 700; color: #0066cc;">${summary.totalHours}</div>
                     </div>
                     <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; border-left: 4px solid #1a365d; text-align: center;">
-                        <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; font-weight: 600;">Días Trabajados</div>
+                        <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; font-weight: 600;">${d.daysWorked}</div>
                         <div style="font-size: 24px; font-weight: 700; color: #1a365d;">${summary.daysWorked}</div>
                     </div>
                     <div style="background: #efe; padding: 15px; border-radius: 8px; border-left: 4px solid #22b55f; text-align: center;">
-                        <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; font-weight: 600;">Promedio Horas/Día</div>
+                        <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; font-weight: 600;">${d.avgHours}</div>
                         <div style="font-size: 24px; font-weight: 700; color: #22b55f;">${summary.avgHours}</div>
                     </div>
                 </div>
 
                 <!-- Footer -->
                 <div style="border-top: 2px solid #ddd; padding-top: 15px; text-align: center; font-size: 11px; color: #999;">
-                    <p style="margin: 0 0 8px 0;">Documento generado automáticamente por AgriTime Pro</p>
-                    <p style="margin: 0;">Este reporte es válido sin firma digital. Período: ${week.startFormatted} al ${week.endFormatted}</p>
+                    <p style="margin: 0 0 8px 0;">${d.pdfFooter1}</p>
+                    <p style="margin: 0;">${d.pdfFooter2} ${week.startFormatted} - ${week.endFormatted}</p>
                 </div>
             </div>
         `;
@@ -224,6 +231,6 @@ function exportToPDF() {
     const user = AppCore.getCurrentUser();
     const data = AppCore.getTimesheetData();
     const weekStart = AppCore.getCurrentWeekStart();
-    
+
     ExportManager.generatePDF(user, data, weekStart);
 }

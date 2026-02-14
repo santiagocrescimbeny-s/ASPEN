@@ -139,8 +139,8 @@ function openEditModal(id) {
         AppCore.setLocation(null);
     }
 
-    const s = entry.startTime ? convert24To12(entry.startTime) : {h:'', m:'00', ampm:'AM'};
-    const e = entry.endTime ? convert24To12(entry.endTime) : {h:'', m:'00', ampm:'PM'};
+    const s = entry.startTime ? convert24To12(entry.startTime) : { h: '', m: '00', ampm: 'AM' };
+    const e = entry.endTime ? convert24To12(entry.endTime) : { h: '', m: '00', ampm: 'PM' };
 
     const sText = document.getElementById('editStartTimeText'); if (sText) sText.value = s.h ? `${s.h}:${s.m}` : '';
     const sToggle = document.getElementById('editStartAmPmToggle'); if (sToggle) sToggle.checked = (s.ampm === 'PM');
@@ -186,7 +186,7 @@ function convert12hTo24(hourStr, minStr, ampm) {
 }
 
 function convert24To12(timeStr) {
-    if (!timeStr) return {h:'', m:'', ampm:'AM'};
+    if (!timeStr) return { h: '', m: '', ampm: 'AM' };
     const [hh, mm] = timeStr.split(':').map(Number);
     let ampm = 'AM';
     let h = hh;
@@ -194,7 +194,7 @@ function convert24To12(timeStr) {
     else if (hh === 12) { h = 12; ampm = 'PM'; }
     else if (hh > 12) { h = hh - 12; ampm = 'PM'; }
     else { ampm = 'AM'; }
-    return { h: String(h), m: String(mm).padStart(2,'0'), ampm };
+    return { h: String(h), m: String(mm).padStart(2, '0'), ampm };
 }
 
 function updateEditHours() {
@@ -279,7 +279,25 @@ function saveEditedDay() {
             hours
         });
         if (newId) {
-            renderTimesheet();
+            // If date is not in current view, switch to it so user sees the new entry
+            const currentWeekStart = AppCore.getCurrentWeekStart();
+            const entryDate = new Date(date + 'T00:00:00');
+            const entryWeekStart = new Date(entryDate);
+            const day = entryWeekStart.getDay();
+            const diff = entryWeekStart.getDate() - day + (day === 0 ? -6 : 1);
+            entryWeekStart.setDate(diff); // Set to Monday of entry week
+
+            // Compare week starts (using time value to ignore object identity)
+            // Normalize time to midnight to be safe
+            currentWeekStart.setHours(0, 0, 0, 0);
+            entryWeekStart.setHours(0, 0, 0, 0);
+
+            if (currentWeekStart.getTime() !== entryWeekStart.getTime()) {
+                AppCore.goToDate(date);
+            } else {
+                renderTimesheet();
+            }
+
             closeEditModal();
             showEditAlert('Jornada agregada', 'success');
         } else {
@@ -300,7 +318,7 @@ function deleteEntry(id) {
 // Show edit alert
 function showEditAlert(message, type) {
     let alertBox = document.getElementById('editAlert');
-    
+
     if (!alertBox) {
         alertBox = document.createElement('div');
         alertBox.id = 'editAlert';
@@ -325,10 +343,10 @@ function exportToPDF() {
     const user = AppCore.getCurrentUser();
     const data = AppCore.getTimesheetData();
     const weekStart = AppCore.getCurrentWeekStart();
-    
+
     // Build HTML content for PDF
     const htmlContent = buildPDFContent(user, data, weekStart);
-    
+
     // PDF options
     const options = {
         margin: 10,
@@ -347,7 +365,7 @@ function buildPDFContent(user, data, weekStart) {
     const monthNames = ['Enero', 'Feb', 'Mar', 'Abr', 'Mayo', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const endDate = new Date(weekStart);
     endDate.setDate(endDate.getDate() + 6);
-    
+
     const weekDescriptor = `${weekStart.getDate()} al ${endDate.getDate()} de ${monthNames[weekStart.getMonth()]}`;
 
     let totalHours = 0;
@@ -519,7 +537,7 @@ function autoSetDayOfWeek() {
     const dateVal = document.getElementById('editDate').value;
     if (!dateVal) return;
     const d = new Date(dateVal + 'T00:00:00');
-    const names = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const names = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const name = names[d.getDay()];
     const daySelect = document.getElementById('editDay');
     if (daySelect) {
@@ -534,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const locBtn = document.getElementById('locationInfoBtn');
     if (locBtn) locBtn.addEventListener('click', openMapModal);
-    
+
     // Time input helpers and toggle wiring
     const startText = document.getElementById('editStartTimeText');
     const endText = document.getElementById('editEndTimeText');
@@ -567,13 +585,13 @@ function normalizeTimeInput(val) {
             return String(parseInt(t, 10)) + ':00';
         }
         if (t.length === 3) { // HMM -> H:MM
-            const h = String(parseInt(t.slice(0,1),10));
-            const mm = String(parseInt(t.slice(1),10)).padStart(2,'0');
+            const h = String(parseInt(t.slice(0, 1), 10));
+            const mm = String(parseInt(t.slice(1), 10)).padStart(2, '0');
             return h + ':' + mm;
         }
         if (t.length === 4) { // HHMM -> HH:MM
-            const h = String(parseInt(t.slice(0,2),10));
-            const mm = String(parseInt(t.slice(2),10)).padStart(2,'0');
+            const h = String(parseInt(t.slice(0, 2), 10));
+            const mm = String(parseInt(t.slice(2), 10)).padStart(2, '0');
             return h + ':' + mm;
         }
     }
