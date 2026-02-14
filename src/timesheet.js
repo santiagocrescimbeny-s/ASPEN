@@ -170,7 +170,15 @@ function updateEditHours() {
 
     const hours = window.AppCore.calculateHours(start, end, amBreak, pmBreak);
     const resEl = document.getElementById('editHoursResult');
-    if (resEl) resEl.textContent = (isNaN(hours) ? '0.00' : hours.toFixed(2)) + ' hrs';
+    if (resEl) {
+        if (isNaN(hours) || hours <= 0) {
+            resEl.textContent = '0.00 hrs';
+        } else {
+            const h = Math.floor(hours);
+            const m = Math.round((hours - h) * 60);
+            resEl.textContent = `${hours.toFixed(2)} hrs (${h}h ${m}m)`;
+        }
+    }
 }
 window.updateEditHours = updateEditHours;
 
